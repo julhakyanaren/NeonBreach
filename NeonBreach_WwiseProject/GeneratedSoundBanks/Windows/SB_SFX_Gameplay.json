@@ -1,0 +1,147 @@
+{
+ "SoundBanksInfo": {
+  "Platform": "Windows",
+  "BasePlatform": "Windows",
+  "SchemaVersion": "16",
+  "SoundBankVersion": "172",
+  "SoundBanks": [
+   {
+    "Id": "4286135673",
+    "Type": "User",
+    "GUID": "{034E0847-B5AF-40DA-85DF-3EF1CA8C8B6A}",
+    "Language": "SFX",
+    "Hash": "{08E888D2-3BFB-0D84-1AAF-98E1DBDF0938}",
+    "ObjectPath": "\\SoundBanks\\Default Work Unit\\Sound Banks SFX\\SB_SFX_Gameplay",
+    "ShortName": "SB_SFX_Gameplay",
+    "Path": "SB_SFX_Gameplay.bnk",
+    "Media": [
+     {
+      "Id": "336296609",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "PowerUp.wav",
+      "CachePath": "A3/{A3100ED0-129C-FDC0-7D6E-E31F4592A3C0}.wem"
+     },
+     {
+      "Id": "488039563",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Hit03.wav",
+      "CachePath": "E5/{E57DF611-9462-1276-6332-3062D04B08BD}.wem"
+     },
+     {
+      "Id": "501226609",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Hit01.wav",
+      "CachePath": "C1/{C1A297CA-4CF2-2CF8-4513-0355B3FBF9C7}.wem"
+     },
+     {
+      "Id": "888518806",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Hit02.wav",
+      "CachePath": "C6/{C64A0DC3-CDD9-C2C9-8FD3-443B8D29BB7F}.wem"
+     }
+    ],
+    "Events": [
+     {
+      "Id": "2335877786",
+      "Name": "Hit01_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\Hit01_Play",
+      "GUID": "{93E7158D-3D22-4D6B-BBE2-4A343E24AA39}",
+      "MaxAttenuation": "10",
+      "DurationType": "OneShot",
+      "DurationMin": "0.79589",
+      "DurationMax": "0.79589",
+      "MediaRefs": [
+       {
+        "Id": "501226609"
+       }
+      ]
+     },
+     {
+      "Id": "1889507019",
+      "Name": "Hit02_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\Hit02_Play",
+      "GUID": "{99206AFE-0D40-4E73-87D5-0FCF7C99F84E}",
+      "MaxAttenuation": "10",
+      "DurationType": "OneShot",
+      "DurationMin": "0.79588",
+      "DurationMax": "0.79588",
+      "MediaRefs": [
+       {
+        "Id": "888518806"
+       }
+      ]
+     },
+     {
+      "Id": "3908362100",
+      "Name": "Hit03_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\Hit03_Play",
+      "GUID": "{03276CFC-62D7-4354-9B9F-F02F1316D09A}",
+      "MaxAttenuation": "10",
+      "DurationType": "OneShot",
+      "DurationMin": "0.79592",
+      "DurationMax": "0.79592",
+      "MediaRefs": [
+       {
+        "Id": "488039563"
+       }
+      ]
+     },
+     {
+      "Id": "3913212784",
+      "Name": "PowerUp_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\PowerUp_Pause",
+      "GUID": "{AEA5AC50-96B1-460B-AA45-02694D8FD04D}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "2538393448",
+      "Name": "PowerUp_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\PowerUp_Play",
+      "GUID": "{22AC5B28-5A07-4BA2-AB8A-65E14AFAC2CA}",
+      "MaxAttenuation": "15",
+      "DurationType": "OneShot",
+      "DurationMin": "3.032271",
+      "DurationMax": "3.032271",
+      "MediaRefs": [
+       {
+        "Id": "336296609"
+       }
+      ]
+     },
+     {
+      "Id": "232423083",
+      "Name": "PowerUp_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\PowerUp_Resume",
+      "GUID": "{7CBE411B-040E-483C-8139-5E654920D8DF}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "579519706",
+      "Name": "PowerUp_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\GameplayEvents\\PowerUp_Stop",
+      "GUID": "{02CD9A84-B62C-4447-AE9A-5DD70F2D08EB}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     }
+    ]
+   }
+  ],
+  "FileHash": "{2A8FA34F-0DD9-144F-78E2-54E4D12B3D45}"
+ }
+}

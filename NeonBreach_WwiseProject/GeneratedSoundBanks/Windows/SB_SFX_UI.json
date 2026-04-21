@@ -1,0 +1,69 @@
+{
+ "SoundBanksInfo": {
+  "Platform": "Windows",
+  "BasePlatform": "Windows",
+  "SchemaVersion": "16",
+  "SoundBankVersion": "172",
+  "SoundBanks": [
+   {
+    "Id": "2689055695",
+    "Type": "User",
+    "GUID": "{A04B1020-5A07-49FB-8B8B-FB40373D8258}",
+    "Language": "SFX",
+    "Hash": "{2C92BC7E-D809-76F3-C47E-1D4630CD72CC}",
+    "ObjectPath": "\\SoundBanks\\Default Work Unit\\Sound Banks SFX\\SB_SFX_UI",
+    "ShortName": "SB_SFX_UI",
+    "Path": "SB_SFX_UI.bnk",
+    "Media": [
+     {
+      "Id": "510442550",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Hover.wav",
+      "CachePath": "A2/{A276ADAE-D3B4-E23C-3F80-4352A618C164}.wem"
+     },
+     {
+      "Id": "1017380426",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Click.wav",
+      "CachePath": "84/{84C6957F-FB7B-31A4-7906-52CF03CDDF06}.wem"
+     }
+    ],
+    "Events": [
+     {
+      "Id": "311910498",
+      "Name": "Play_Click",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\UI Events\\Play_Click",
+      "GUID": "{359D32D0-C060-45BB-BDD2-CF0AB7926529}",
+      "DurationType": "OneShot",
+      "DurationMin": "0.07664399",
+      "DurationMax": "0.07664399",
+      "MediaRefs": [
+       {
+        "Id": "1017380426"
+       }
+      ]
+     },
+     {
+      "Id": "1962302600",
+      "Name": "Play_Hover",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\UI Events\\Play_Hover",
+      "GUID": "{77659909-4AEC-4EA9-98F0-BB77C48ED6F2}",
+      "DurationType": "OneShot",
+      "DurationMin": "0.22147392",
+      "DurationMax": "0.22147392",
+      "MediaRefs": [
+       {
+        "Id": "510442550"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "FileHash": "{5A03A229-7B9A-8259-4856-B075B4903605}"
+ }
+}

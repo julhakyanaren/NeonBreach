@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WwiseDocument Type="WorkUnit" ID="{30DCD05F-163C-4D5E-A718-2AB7595F5699}" SchemaVersion="133">
+	<GameParameters>
+		<WorkUnit Name="Default Work Unit" ID="{30DCD05F-163C-4D5E-A718-2AB7595F5699}" PersistMode="Standalone">
+			<ChildrenList>
+				<GameParameter Name="MusicVolume" ID="{8781AF54-1332-4351-8147-95FD1E3FD81A}">
+					<PropertyList>
+						<Property Name="InitialValue" Type="Real64" Value="100"/>
+					</PropertyList>
+				</GameParameter>
+				<GameParameter Name="SFXVolume" ID="{3C561E7B-5832-4822-A801-594312ECB9A6}">
+					<PropertyList>
+						<Property Name="InitialValue" Type="Real64" Value="0"/>
+					</PropertyList>
+				</GameParameter>
+				<Folder Name="Gameplay" ID="{4579E407-6C12-41D3-9C8D-5FC608F89295}" ShortID="965838987">
+					<ChildrenList>
+						<GameParameter Name="PlayerReloadPitch" ID="{807EB235-4A13-461C-92E7-E7CCFF08FA01}">
+							<PropertyList>
+								<Property Name="InitialValue" Type="Real64" Value="1"/>
+								<Property Name="Max" Type="Real64" Value="2"/>
+								<Property Name="Min" Type="Real64" Value="1"/>
+							</PropertyList>
+						</GameParameter>
+						<GameParameter Name="PlayerShootPitch" ID="{DB328B56-7DB3-48C1-AB53-B80E75475DCF}">
+							<PropertyList>
+								<Property Name="InitialValue" Type="Real64" Value="0"/>
+							</PropertyList>
+						</GameParameter>
+						<GameParameter Name="HotshotAttackPitch" ID="{0BE35B6D-1444-4276-9D53-F52701BBBD75}">
+							<PropertyList>
+								<Property Name="InitialValue" Type="Real64" Value="0"/>
+							</PropertyList>
+						</GameParameter>
+					</ChildrenList>
+				</Folder>
+			</ChildrenList>
+		</WorkUnit>
+	</GameParameters>
+</WwiseDocument>

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6ff2230a6ec06d44b542583e9fe9dfc, type: 3}
+  m_Name: HotshotConfig_Default
+  m_EditorClassIdentifier: 
+  maxHealth: 200
+  detectionRadius: 15
+  targetRefreshInterval: 0.25
+  moveSpeed: 3.5
+  rotationSpeed: 8
+  minAttackDistance: 2
+  maxAttackDistance: 10
+  movementDeadZone: 0.15
+  aimRotationSpeed: 120
+  aimTolerance: 1.5
+  idlePitchAngle: 0
+  resetPitchWhenCannotAttack: 1
+  shotsPerMinute: 120
+  shootFacingThreshold: 0.9
+  magazineSize: 20
+  baseShootDuration: 1
+  baseReloadDuration: 5
+  reloadDuration: 5
+  useSymmetricalValues: 1
+  angle: 4
+  upAngle: -10
+  centerAngle: 0
+  downAngle: 10
+  useControllerAttackDistance: 1
+  aimRayDistance: 20
+  aimTargetMask:
+    serializedVersion: 2
+    m_Bits: 64
+  baseScoreReward: 80
+  scoreMultiplier: 1

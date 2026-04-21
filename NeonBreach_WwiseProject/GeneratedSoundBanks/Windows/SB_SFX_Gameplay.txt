@@ -1,0 +1,15 @@
+Event	ID	Name			Wwise Object Path	Notes
+	232423083	PowerUp_Resume			\Default Work Unit\SFX Events\GameplayEvents\PowerUp_Resume	
+	579519706	PowerUp_Stop			\Default Work Unit\SFX Events\GameplayEvents\PowerUp_Stop	
+	1889507019	Hit02_Play			\Default Work Unit\SFX Events\GameplayEvents\Hit02_Play	
+	2335877786	Hit01_Play			\Default Work Unit\SFX Events\GameplayEvents\Hit01_Play	
+	2538393448	PowerUp_Play			\Default Work Unit\SFX Events\GameplayEvents\PowerUp_Play	
+	3908362100	Hit03_Play			\Default Work Unit\SFX Events\GameplayEvents\Hit03_Play	
+	3913212784	PowerUp_Pause			\Default Work Unit\SFX Events\GameplayEvents\PowerUp_Pause	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	336296609	PowerUp	.cache\A3\{A3100ED0-129C-FDC0-7D6E-E31F4592A3C0}.wem		\Containers\Default Work Unit\Gameplay\PowerUp		582292
+	488039563	Hit03	.cache\E5\{E57DF611-9462-1276-6332-3062D04B08BD}.wem		\Containers\Default Work Unit\Gameplay\Hit03		140496
+	501226609	Hit01	.cache\C1\{C1A297CA-4CF2-2CF8-4513-0355B3FBF9C7}.wem		\Containers\Default Work Unit\Gameplay\Hit01		140492
+	888518806	Hit02	.cache\C6\{C64A0DC3-CDD9-C2C9-8FD3-443B8D29BB7F}.wem		\Containers\Default Work Unit\Gameplay\Hit02		140488
+

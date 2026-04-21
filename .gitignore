@@ -1,0 +1,60 @@
+# =========================
+# Unity generated folders
+# =========================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+
+# =========================
+# User-specific settings
+# =========================
+UserSettings/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# =========================
+# Unity meta handling
+# =========================
+*.pidb.meta
+*.pdb.meta
+
+# =========================
+# Visual Studio cache
+# =========================
+.vs/
+
+# =========================
+# Rider / JetBrains
+# =========================
+.idea/
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Build results
+# =========================
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# =========================
+# Crash logs
+# =========================
+sysinfo.txt

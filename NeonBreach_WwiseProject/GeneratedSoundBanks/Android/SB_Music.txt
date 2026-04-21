@@ -1,0 +1,14 @@
+Event	ID	Name			Wwise Object Path	Notes
+	389859239	Resume_GameMusic1			\Default Work Unit\MenuMusic Events\GameMusic\Resume_GameMusic1	
+	458124776	Stop_GameMusic1			\Default Work Unit\MenuMusic Events\GameMusic\Stop_GameMusic1	
+	1169399582	Pause_MenuMusic			\Default Work Unit\MenuMusic Events\MenuMusic\Pause_MenuMusic	
+	1762454998	Play_GameMusic1			\Default Work Unit\MenuMusic Events\GameMusic\Play_GameMusic1	
+	2570041344	Play_MenuMusic			\Default Work Unit\MenuMusic Events\MenuMusic\Play_MenuMusic	
+	2753202630	Stop_MenuMusic			\Default Work Unit\MenuMusic Events\MenuMusic\Stop_MenuMusic	
+	3513670144	Pause_GameMusic1			\Default Work Unit\MenuMusic Events\GameMusic\Pause_GameMusic1	
+	3795863871	Resume_MenuMusic			\Default Work Unit\MenuMusic Events\MenuMusic\Resume_MenuMusic	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	485958140	Ambient_Menu	.cache\FB\{FBC89E15-04DC-3511-E212-E84859213069}.wem		\Containers\Default Work Unit\Music\Ambient_Menu		32620128
+	870257182	GameMusicRock01	.cache\58\{5848A3B3-E1C8-AA49-77DF-B556C9ED58EE}.wem		\Containers\Default Work Unit\Music\GameMusicRock01		39698016
+

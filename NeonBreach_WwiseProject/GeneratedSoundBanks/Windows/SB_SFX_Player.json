@@ -1,0 +1,145 @@
+{
+ "SoundBanksInfo": {
+  "Platform": "Windows",
+  "BasePlatform": "Windows",
+  "SchemaVersion": "16",
+  "SoundBankVersion": "172",
+  "SoundBanks": [
+   {
+    "Id": "4110307122",
+    "Type": "User",
+    "GUID": "{8C891AD8-A5E4-47D8-9380-74E997F9FE96}",
+    "Language": "SFX",
+    "Hash": "{8F4F5948-C354-BE34-5B86-663CCFA7CCB7}",
+    "ObjectPath": "\\SoundBanks\\Default Work Unit\\Sound Banks SFX\\SB_SFX_Player",
+    "ShortName": "SB_SFX_Player",
+    "Path": "SB_SFX_Player.bnk",
+    "Media": [
+     {
+      "Id": "753790550",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Player_Shoot.wav",
+      "CachePath": "20/{20F2F5A8-7FD3-7A72-69A3-3BA0D01A1D22}.wem"
+     },
+     {
+      "Id": "944650929",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Player_Reload.wav",
+      "CachePath": "40/{40B877E2-8FE8-7FC1-8B6E-0C3E6DB29377}.wem"
+     }
+    ],
+    "Events": [
+     {
+      "Id": "1196250714",
+      "Name": "PlayerReload_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerReload\\PlayerReload_Pause",
+      "GUID": "{428ED1E4-57E1-4D9D-8668-613C963F5982}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1476373818",
+      "Name": "PlayerReload_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerReload\\PlayerReload_Play",
+      "GUID": "{CA124E24-2A0F-48C2-9BA7-2E5F52935773}",
+      "MaxAttenuation": "20",
+      "DurationType": "OneShot",
+      "DurationMin": "5",
+      "DurationMax": "5",
+      "MediaRefs": [
+       {
+        "Id": "944650929"
+       }
+      ]
+     },
+     {
+      "Id": "3815521165",
+      "Name": "PlayerReload_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerReload\\PlayerReload_Resume",
+      "GUID": "{0B1EA0D9-74AF-4D32-877B-182D03BE874F}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "2875456068",
+      "Name": "PlayerReload_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerReload\\PlayerReload_Stop",
+      "GUID": "{768C49AB-48D0-41CB-B5DD-9E2411619539}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1414900113",
+      "Name": "PlayerShot_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerShot\\PlayerShot_Pause",
+      "GUID": "{764C9DD6-A3C0-40C6-8F58-696E4DD09C51}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "4258476091",
+      "Name": "PlayerShot_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerShot\\PlayerShot_Play",
+      "GUID": "{F7459B32-FC3F-41DD-A4C7-6639412E288A}",
+      "MaxAttenuation": "20",
+      "DurationType": "OneShot",
+      "DurationMin": "0.5",
+      "DurationMax": "0.5",
+      "MediaRefs": [
+       {
+        "Id": "753790550"
+       }
+      ]
+     },
+     {
+      "Id": "4170913200",
+      "Name": "PlayerShot_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerShot\\PlayerShot_Resume",
+      "GUID": "{F3FBF890-9ADD-4F9B-ACC6-D5FF67E5252E}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "3086259185",
+      "Name": "PlayerShot_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Player Events\\PlayerShot\\PlayerShot_Stop",
+      "GUID": "{C48F8C6F-0936-4DC5-8A2F-3E129AA37D8B}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     }
+    ],
+    "GameParameters": [
+     {
+      "Id": "811835509",
+      "Name": "PlayerReloadPitch",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\Gameplay\\PlayerReloadPitch",
+      "GUID": "{807EB235-4A13-461C-92E7-E7CCFF08FA01}"
+     },
+     {
+      "Id": "4137009587",
+      "Name": "PlayerShootPitch",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\Gameplay\\PlayerShootPitch",
+      "GUID": "{DB328B56-7DB3-48C1-AB53-B80E75475DCF}"
+     }
+    ]
+   }
+  ],
+  "FileHash": "{B990066C-0765-639C-73A5-688ACF1FDDD0}"
+ }
+}

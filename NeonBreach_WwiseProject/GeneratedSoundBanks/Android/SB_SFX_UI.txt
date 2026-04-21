@@ -1,0 +1,8 @@
+Event	ID	Name			Wwise Object Path	Notes
+	311910498	Play_Click			\Default Work Unit\SFX Events\UI Events\Play_Click	
+	1962302600	Play_Hover			\Default Work Unit\SFX Events\UI Events\Play_Hover	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	510442550	Hover	.cache\A2\{A276ADAE-D3B4-E23C-3F80-4352A618C164}.wem		\Containers\Default Work Unit\UI\Hover		39164
+	1017380426	Click	.cache\84\{84C6957F-FB7B-31A4-7906-52CF03CDDF06}.wem		\Containers\Default Work Unit\UI\Click		13616
+

@@ -1,0 +1,18 @@
+Event	ID	Name			Wwise Object Path	Notes
+	1196250714	PlayerReload_Pause			\Default Work Unit\SFX Events\Player Events\PlayerReload\PlayerReload_Pause	
+	1414900113	PlayerShot_Pause			\Default Work Unit\SFX Events\Player Events\PlayerShot\PlayerShot_Pause	
+	1476373818	PlayerReload_Play			\Default Work Unit\SFX Events\Player Events\PlayerReload\PlayerReload_Play	
+	2875456068	PlayerReload_Stop			\Default Work Unit\SFX Events\Player Events\PlayerReload\PlayerReload_Stop	
+	3086259185	PlayerShot_Stop			\Default Work Unit\SFX Events\Player Events\PlayerShot\PlayerShot_Stop	
+	3815521165	PlayerReload_Resume			\Default Work Unit\SFX Events\Player Events\PlayerReload\PlayerReload_Resume	
+	4170913200	PlayerShot_Resume			\Default Work Unit\SFX Events\Player Events\PlayerShot\PlayerShot_Resume	
+	4258476091	PlayerShot_Play			\Default Work Unit\SFX Events\Player Events\PlayerShot\PlayerShot_Play	
+
+Game Parameter	ID	Name			Wwise Object Path	Notes
+	811835509	PlayerReloadPitch			\Default Work Unit\Gameplay\PlayerReloadPitch	
+	4137009587	PlayerShootPitch			\Default Work Unit\Gameplay\PlayerShootPitch	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	753790550	Player_Shoot	.cache\20\{20F2F5A8-7FD3-7A72-69A3-3BA0D01A1D22}.wem		\Containers\Default Work Unit\Player\Player_Shoot		96096
+	944650929	Player_Reload	.cache\40\{40B877E2-8FE8-7FC1-8B6E-0C3E6DB29377}.wem		\Containers\Default Work Unit\Player\Player_Reload		960096
+

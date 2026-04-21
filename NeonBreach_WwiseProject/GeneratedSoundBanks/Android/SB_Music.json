@@ -1,0 +1,125 @@
+{
+ "SoundBanksInfo": {
+  "Platform": "Android",
+  "BasePlatform": "Android",
+  "SchemaVersion": "16",
+  "SoundBankVersion": "172",
+  "SoundBanks": [
+   {
+    "Id": "779753582",
+    "Type": "User",
+    "GUID": "{6B3ABBAD-17AC-424F-832F-FFB7EAD0AB13}",
+    "Language": "SFX",
+    "Hash": "{957B37A3-1BB4-6E73-E3B4-1B79B67B9F5C}",
+    "ObjectPath": "\\SoundBanks\\Default Work Unit\\Sound Banks Music\\SB_Music",
+    "ShortName": "SB_Music",
+    "Path": "SB_Music.bnk",
+    "Media": [
+     {
+      "Id": "485958140",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Ambient_Menu.wav",
+      "CachePath": "FB/{FBC89E15-04DC-3511-E212-E84859213069}.wem"
+     },
+     {
+      "Id": "870257182",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "GameMusicRock01.wav",
+      "CachePath": "58/{5848A3B3-E1C8-AA49-77DF-B556C9ED58EE}.wem"
+     }
+    ],
+    "Events": [
+     {
+      "Id": "3513670144",
+      "Name": "Pause_GameMusic1",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\GameMusic\\Pause_GameMusic1",
+      "GUID": "{347565E1-D115-472A-ACB2-E6200F1A5B72}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1169399582",
+      "Name": "Pause_MenuMusic",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\MenuMusic\\Pause_MenuMusic",
+      "GUID": "{C9572464-5533-42B0-8D04-D17DA067D592}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1762454998",
+      "Name": "Play_GameMusic1",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\GameMusic\\Play_GameMusic1",
+      "GUID": "{36032E2F-FC43-4077-B8AB-5FB593507198}",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "870257182"
+       }
+      ]
+     },
+     {
+      "Id": "2570041344",
+      "Name": "Play_MenuMusic",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\MenuMusic\\Play_MenuMusic",
+      "GUID": "{C664B2AE-5B31-4AD2-B363-4211037FC4B3}",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "485958140"
+       }
+      ]
+     },
+     {
+      "Id": "389859239",
+      "Name": "Resume_GameMusic1",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\GameMusic\\Resume_GameMusic1",
+      "GUID": "{0063D591-CA74-4894-B1C1-C18D0AA53A81}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "3795863871",
+      "Name": "Resume_MenuMusic",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\MenuMusic\\Resume_MenuMusic",
+      "GUID": "{03164251-B590-418C-905A-D3B552822764}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "458124776",
+      "Name": "Stop_GameMusic1",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\GameMusic\\Stop_GameMusic1",
+      "GUID": "{C066451E-9647-4F30-B47A-AC6ABE6C3B25}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "2753202630",
+      "Name": "Stop_MenuMusic",
+      "ObjectPath": "\\Events\\Default Work Unit\\MenuMusic Events\\MenuMusic\\Stop_MenuMusic",
+      "GUID": "{2610E600-A5B9-4C5F-BC44-06F1934AF952}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     }
+    ]
+   }
+  ],
+  "FileHash": "{24425186-C369-634E-C1DC-3010A31CBCAF}"
+ }
+}

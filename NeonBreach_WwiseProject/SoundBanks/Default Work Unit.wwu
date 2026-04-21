@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WwiseDocument Type="WorkUnit" ID="{82D466AD-C8D0-4F32-868C-4F932D296059}" SchemaVersion="133">
+	<SoundBanks>
+		<WorkUnit Name="Default Work Unit" ID="{82D466AD-C8D0-4F32-868C-4F932D296059}" PersistMode="Standalone">
+			<ChildrenList>
+				<SoundBank Name="SB_SFX" ID="{E5939AED-1A3E-4DA2-B946-ACAC8F848B13}">
+					<ObjectInclusionList/>
+					<ObjectExclusionList/>
+					<GameSyncExclusionList/>
+				</SoundBank>
+				<Folder Name="Sound Banks Music" ID="{218998E7-3A02-42E3-91F3-B1EFC012F7DB}" ShortID="516398876">
+					<ChildrenList>
+						<SoundBank Name="SB_Music" ID="{6B3ABBAD-17AC-424F-832F-FFB7EAD0AB13}">
+							<ObjectInclusionList>
+								<ObjectRef Name="Play_GameMusic1" ID="{36032E2F-FC43-4077-B8AB-5FB593507198}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Resume_MenuMusic" ID="{03164251-B590-418C-905A-D3B552822764}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Pause_MenuMusic" ID="{C9572464-5533-42B0-8D04-D17DA067D592}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Pause_GameMusic1" ID="{347565E1-D115-472A-ACB2-E6200F1A5B72}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Resume_GameMusic1" ID="{0063D591-CA74-4894-B1C1-C18D0AA53A81}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Play_MenuMusic" ID="{C664B2AE-5B31-4AD2-B363-4211037FC4B3}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Stop_MenuMusic" ID="{2610E600-A5B9-4C5F-BC44-06F1934AF952}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Stop_GameMusic1" ID="{C066451E-9647-4F30-B47A-AC6ABE6C3B25}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+							</ObjectInclusionList>
+							<ObjectExclusionList/>
+							<GameSyncExclusionList/>
+						</SoundBank>
+					</ChildrenList>
+				</Folder>
+				<Folder Name="Sound Banks SFX" ID="{0DC5E5EB-BD31-46DB-A168-C5DBDC8E70CA}" ShortID="634990288">
+					<ChildrenList>
+						<SoundBank Name="SB_SFX_UI" ID="{A04B1020-5A07-49FB-8B8B-FB40373D8258}">
+							<ObjectInclusionList>
+								<ObjectRef Name="Play_Click" ID="{359D32D0-C060-45BB-BDD2-CF0AB7926529}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Play_Hover" ID="{77659909-4AEC-4EA9-98F0-BB77C48ED6F2}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+							</ObjectInclusionList>
+							<ObjectExclusionList/>
+							<GameSyncExclusionList/>
+						</SoundBank>
+						<SoundBank Name="SB_SFX_Player" ID="{8C891AD8-A5E4-47D8-9380-74E997F9FE96}">
+							<ObjectInclusionList>
+								<ObjectRef Name="PlayerShot_Pause" ID="{764C9DD6-A3C0-40C6-8F58-696E4DD09C51}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerReload_Stop" ID="{768C49AB-48D0-41CB-B5DD-9E2411619539}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerShot_Play" ID="{F7459B32-FC3F-41DD-A4C7-6639412E288A}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerReload_Play" ID="{CA124E24-2A0F-48C2-9BA7-2E5F52935773}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerReload_Resume" ID="{0B1EA0D9-74AF-4D32-877B-182D03BE874F}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerReload_Pause" ID="{428ED1E4-57E1-4D9D-8668-613C963F5982}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerShot_Stop" ID="{C48F8C6F-0936-4DC5-8A2F-3E129AA37D8B}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PlayerShot_Resume" ID="{F3FBF890-9ADD-4F9B-ACC6-D5FF67E5252E}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+							</ObjectInclusionList>
+							<ObjectExclusionList/>
+							<GameSyncExclusionList/>
+						</SoundBank>
+						<SoundBank Name="SB_SFX_Enemies" ID="{4ECCD20A-7DED-4AB3-B35E-3E5A7E3123FA}">
+							<ObjectInclusionList>
+								<ObjectRef Name="HotshotReload_Resume" ID="{12EA0DC9-1699-4153-8411-B2E3E7B26F6D}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotShot_Pause" ID="{60DBC065-50C6-41EB-B059-846FA1F962A5}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="SaberwingAttack_Stop" ID="{3F087685-FC7E-435E-BDAB-8D916BB395EB}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotShot_Stop" ID="{4728C8CE-0B26-43B8-A84F-227CEEA4B344}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="SaberwingAttack_Pause" ID="{C64AA5ED-9AF1-450E-8801-64670B5D28B0}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotReload_Play" ID="{BBF6DCC7-5E6F-4517-8BAF-AB244433E19A}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="JaggernautAttack_Resume" ID="{709B04AC-3384-4688-9F9E-B1E6982FAB23}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="JaggernautAttack_Pause" ID="{B25EE46B-682D-47F1-8242-9AA813F8942B}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotReload_Pause" ID="{3E828B0B-DDAF-489F-ABDC-3F5300017C86}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="JaggernautAttack_Play" ID="{FB7AD59E-451E-4940-AC9D-0BC424FBCC3E}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="JaggernautAttack_Stop" ID="{3DCF90C6-72C3-4AA3-8CA6-0CA56B5DDDBE}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotReload_Stop" ID="{FE4BE5E5-71CA-4C42-B118-630751D1ECE7}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotShot_Play" ID="{8930729E-7DEE-4C74-AF84-C9B2BF603269}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="SaberwingAttack_Play" ID="{4632E530-B518-4D6D-8A8A-2ECDD3A19959}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="SaberwingAttack_Resume" ID="{6924A49F-654C-4E1F-8682-48AFBB5CE152}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="HotshotShot_Resume" ID="{397046BC-46DE-4F62-8898-AED447493A89}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+							</ObjectInclusionList>
+							<ObjectExclusionList/>
+							<GameSyncExclusionList/>
+						</SoundBank>
+						<SoundBank Name="SB_SFX_Gameplay" ID="{034E0847-B5AF-40DA-85DF-3EF1CA8C8B6A}">
+							<ObjectInclusionList>
+								<ObjectRef Name="Hit03_Play" ID="{03276CFC-62D7-4354-9B9F-F02F1316D09A}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PowerUp_Stop" ID="{02CD9A84-B62C-4447-AE9A-5DD70F2D08EB}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PowerUp_Pause" ID="{AEA5AC50-96B1-460B-AA45-02694D8FD04D}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PowerUp_Resume" ID="{7CBE411B-040E-483C-8139-5E654920D8DF}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="PowerUp_Play" ID="{22AC5B28-5A07-4BA2-AB8A-65E14AFAC2CA}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Hit01_Play" ID="{93E7158D-3D22-4D6B-BBE2-4A343E24AA39}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+								<ObjectRef Name="Hit02_Play" ID="{99206AFE-0D40-4E73-87D5-0FCF7C99F84E}" WorkUnitID="{73D9092A-3930-4651-9382-9818B7292B98}" Origin="Manual" Filter="7"/>
+							</ObjectInclusionList>
+							<ObjectExclusionList/>
+							<GameSyncExclusionList/>
+						</SoundBank>
+					</ChildrenList>
+				</Folder>
+			</ChildrenList>
+		</WorkUnit>
+	</SoundBanks>
+</WwiseDocument>

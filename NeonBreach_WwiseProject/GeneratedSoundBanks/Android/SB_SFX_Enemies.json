@@ -1,0 +1,244 @@
+{
+ "SoundBanksInfo": {
+  "Platform": "Android",
+  "BasePlatform": "Android",
+  "SchemaVersion": "16",
+  "SoundBankVersion": "172",
+  "SoundBanks": [
+   {
+    "Id": "132868755",
+    "Type": "User",
+    "GUID": "{4ECCD20A-7DED-4AB3-B35E-3E5A7E3123FA}",
+    "Language": "SFX",
+    "Hash": "{C99102B6-DB5D-6566-D336-30EA55FCC942}",
+    "ObjectPath": "\\SoundBanks\\Default Work Unit\\Sound Banks SFX\\SB_SFX_Enemies",
+    "ShortName": "SB_SFX_Enemies",
+    "Path": "SB_SFX_Enemies.bnk",
+    "Media": [
+     {
+      "Id": "373665888",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Jaggernaut_Attack-StartEnd.wav",
+      "CachePath": "C9/{C9C99764-0672-361D-7430-3EE22B1179D0}.wem"
+     },
+     {
+      "Id": "598265016",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "HotshotWeapon_Shoot.wav",
+      "CachePath": "78/{789CC160-04CF-6EAC-2473-63BFA5041667}.wem"
+     },
+     {
+      "Id": "1059927857",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Saberwing_Attack.wav",
+      "CachePath": "47/{473028C9-79C3-955B-2670-16335B15D13E}.wem"
+     },
+     {
+      "Id": "1070051484",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "HotshotWeapon_Reload.wav",
+      "CachePath": "C8/{C88CEB68-0F7F-59BC-0E42-3FA900698535}.wem"
+     }
+    ],
+    "Events": [
+     {
+      "Id": "2622573122",
+      "Name": "HotshotReload_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotReload\\HotshotReload_Pause",
+      "GUID": "{3E828B0B-DDAF-489F-ABDC-3F5300017C86}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1740008082",
+      "Name": "HotshotReload_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotReload\\HotshotReload_Play",
+      "GUID": "{BBF6DCC7-5E6F-4517-8BAF-AB244433E19A}",
+      "DurationType": "OneShot",
+      "DurationMin": "5",
+      "DurationMax": "5",
+      "MediaRefs": [
+       {
+        "Id": "1070051484"
+       }
+      ]
+     },
+     {
+      "Id": "3919054613",
+      "Name": "HotshotReload_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotReload\\HotshotReload_Resume",
+      "GUID": "{12EA0DC9-1699-4153-8411-B2E3E7B26F6D}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "3451565580",
+      "Name": "HotshotReload_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotReload\\HotshotReload_Stop",
+      "GUID": "{FE4BE5E5-71CA-4C42-B118-630751D1ECE7}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "672832857",
+      "Name": "HotshotShot_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotShot\\HotshotShot_Pause",
+      "GUID": "{60DBC065-50C6-41EB-B059-846FA1F962A5}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "2389334707",
+      "Name": "HotshotShot_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotShot\\HotshotShot_Play",
+      "GUID": "{8930729E-7DEE-4C74-AF84-C9B2BF603269}",
+      "MaxAttenuation": "20",
+      "DurationType": "OneShot",
+      "DurationMin": "1.0012916",
+      "DurationMax": "1.0012916",
+      "MediaRefs": [
+       {
+        "Id": "598265016"
+       }
+      ]
+     },
+     {
+      "Id": "1001877912",
+      "Name": "HotshotShot_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotShot\\HotshotShot_Resume",
+      "GUID": "{397046BC-46DE-4F62-8898-AED447493A89}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1477776793",
+      "Name": "HotshotShot_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\HotshotShot\\HotshotShot_Stop",
+      "GUID": "{4728C8CE-0B26-43B8-A84F-227CEEA4B344}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1296394974",
+      "Name": "JaggernautAttack_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\JaggernautAttack\\JaggernautAttack_Pause",
+      "GUID": "{B25EE46B-682D-47F1-8242-9AA813F8942B}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "172529918",
+      "Name": "JaggernautAttack_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\JaggernautAttack\\JaggernautAttack_Play",
+      "GUID": "{FB7AD59E-451E-4940-AC9D-0BC424FBCC3E}",
+      "MaxAttenuation": "30",
+      "DurationType": "OneShot",
+      "DurationMin": "2.2",
+      "DurationMax": "2.2",
+      "MediaRefs": [
+       {
+        "Id": "373665888"
+       }
+      ]
+     },
+     {
+      "Id": "1201141593",
+      "Name": "JaggernautAttack_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\JaggernautAttack\\JaggernautAttack_Resume",
+      "GUID": "{709B04AC-3384-4688-9F9E-B1E6982FAB23}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1210422720",
+      "Name": "JaggernautAttack_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\JaggernautAttack\\JaggernautAttack_Stop",
+      "GUID": "{3DCF90C6-72C3-4AA3-8CA6-0CA56B5DDDBE}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "1391216142",
+      "Name": "SaberwingAttack_Pause",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\SaberwingAttack\\SaberwingAttack_Pause",
+      "GUID": "{C64AA5ED-9AF1-450E-8801-64670B5D28B0}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "4159421678",
+      "Name": "SaberwingAttack_Play",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\SaberwingAttack\\SaberwingAttack_Play",
+      "GUID": "{4632E530-B518-4D6D-8A8A-2ECDD3A19959}",
+      "MaxAttenuation": "30",
+      "DurationType": "OneShot",
+      "DurationMin": "0.59208333",
+      "DurationMax": "0.59208333",
+      "MediaRefs": [
+       {
+        "Id": "1059927857"
+       }
+      ]
+     },
+     {
+      "Id": "1564672937",
+      "Name": "SaberwingAttack_Resume",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\SaberwingAttack\\SaberwingAttack_Resume",
+      "GUID": "{6924A49F-654C-4E1F-8682-48AFBB5CE152}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     },
+     {
+      "Id": "865993424",
+      "Name": "SaberwingAttack_Stop",
+      "ObjectPath": "\\Events\\Default Work Unit\\SFX Events\\Enemies Events\\SaberwingAttack\\SaberwingAttack_Stop",
+      "GUID": "{3F087685-FC7E-435E-BDAB-8D916BB395EB}",
+      "MaxAttenuation": "0",
+      "DurationType": "OneShot",
+      "DurationMin": "0",
+      "DurationMax": "0"
+     }
+    ],
+    "GameParameters": [
+     {
+      "Id": "2140247760",
+      "Name": "HotshotAttackPitch",
+      "ObjectPath": "\\Game Parameters\\Default Work Unit\\Gameplay\\HotshotAttackPitch",
+      "GUID": "{0BE35B6D-1444-4276-9D53-F52701BBBD75}"
+     }
+    ]
+   }
+  ],
+  "FileHash": "{1BDCBF97-978C-A7A0-4266-D0D828F83BF9}"
+ }
+}

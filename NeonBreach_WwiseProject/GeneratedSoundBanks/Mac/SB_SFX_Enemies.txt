@@ -1,0 +1,27 @@
+Event	ID	Name			Wwise Object Path	Notes
+	172529918	JaggernautAttack_Play			\Default Work Unit\SFX Events\Enemies Events\JaggernautAttack\JaggernautAttack_Play	
+	672832857	HotshotShot_Pause			\Default Work Unit\SFX Events\Enemies Events\HotshotShot\HotshotShot_Pause	
+	865993424	SaberwingAttack_Stop			\Default Work Unit\SFX Events\Enemies Events\SaberwingAttack\SaberwingAttack_Stop	
+	1001877912	HotshotShot_Resume			\Default Work Unit\SFX Events\Enemies Events\HotshotShot\HotshotShot_Resume	
+	1201141593	JaggernautAttack_Resume			\Default Work Unit\SFX Events\Enemies Events\JaggernautAttack\JaggernautAttack_Resume	
+	1210422720	JaggernautAttack_Stop			\Default Work Unit\SFX Events\Enemies Events\JaggernautAttack\JaggernautAttack_Stop	
+	1296394974	JaggernautAttack_Pause			\Default Work Unit\SFX Events\Enemies Events\JaggernautAttack\JaggernautAttack_Pause	
+	1391216142	SaberwingAttack_Pause			\Default Work Unit\SFX Events\Enemies Events\SaberwingAttack\SaberwingAttack_Pause	
+	1477776793	HotshotShot_Stop			\Default Work Unit\SFX Events\Enemies Events\HotshotShot\HotshotShot_Stop	
+	1564672937	SaberwingAttack_Resume			\Default Work Unit\SFX Events\Enemies Events\SaberwingAttack\SaberwingAttack_Resume	
+	1740008082	HotshotReload_Play			\Default Work Unit\SFX Events\Enemies Events\HotshotReload\HotshotReload_Play	
+	2389334707	HotshotShot_Play			\Default Work Unit\SFX Events\Enemies Events\HotshotShot\HotshotShot_Play	
+	2622573122	HotshotReload_Pause			\Default Work Unit\SFX Events\Enemies Events\HotshotReload\HotshotReload_Pause	
+	3451565580	HotshotReload_Stop			\Default Work Unit\SFX Events\Enemies Events\HotshotReload\HotshotReload_Stop	
+	3919054613	HotshotReload_Resume			\Default Work Unit\SFX Events\Enemies Events\HotshotReload\HotshotReload_Resume	
+	4159421678	SaberwingAttack_Play			\Default Work Unit\SFX Events\Enemies Events\SaberwingAttack\SaberwingAttack_Play	
+
+Game Parameter	ID	Name			Wwise Object Path	Notes
+	2140247760	HotshotAttackPitch			\Default Work Unit\Gameplay\HotshotAttackPitch	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	373665888	Jaggernaut_Attack-StartEnd	.cache\C9\{C9C99764-0672-361D-7430-3EE22B1179D0}.wem		\Containers\Default Work Unit\Enemies\Jaggernaut_Attack-StartEnd		211296
+	598265016	HotshotWeapon_Shoot	.cache\78\{789CC160-04CF-6EAC-2473-63BFA5041667}.wem		\Containers\Default Work Unit\Enemies\HotshotWeapon_Shoot		192344
+	1059927857	Saberwing_Attack	.cache\47\{473028C9-79C3-955B-2670-16335B15D13E}.wem		\Containers\Default Work Unit\Enemies\Saberwing_Attack		113776
+	1070051484	HotshotWeapon_Reload	.cache\C8\{C88CEB68-0F7F-59BC-0E42-3FA900698535}.wem		\Containers\Default Work Unit\Enemies\HotshotWeapon_Reload		960096
+
