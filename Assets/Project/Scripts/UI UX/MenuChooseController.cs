@@ -106,6 +106,9 @@ public class MenuChooseController : MonoBehaviour
     [Tooltip("Back To Main Menu button.")]
     [SerializeField] private Button backToMenu;
 
+    [Tooltip("Use Multiplayer button.")]
+    [SerializeField] private Button useMultiplayerButton;
+
     [Header("Character Config Sources")]
     [Tooltip("Cyan player config source.")]
     [SerializeField] private PlayerConfig playerConfigCyan;
@@ -145,6 +148,9 @@ public class MenuChooseController : MonoBehaviour
     [Header("References")]
     [Tooltip("References of the MainMenu Canvases group game object")]
     [SerializeField] private GameObject mainMenuCanvasGroup;
+
+    [Tooltip("Photon launcher used for multiplayer start flow.")]
+    [SerializeField] private MenuPhotonLauncher menuPhotonLauncher;
 
     [Header("Music")]
     [Tooltip("Reference of the WwiseMusicRtpcApplier script")]
@@ -192,143 +198,6 @@ public class MenuChooseController : MonoBehaviour
         {
             characterSelected = value;
         }
-    }
-
-    private void Awake()
-    {
-        initialized = ValidateReferences();
-
-        if (!initialized)
-        {
-            enabled = false;
-            return;
-        }
-
-        projectileConfigCyan = playerConfigCyan.projectileConfig;
-        projectileConfigLavender = playerConfigLavender.projectileConfig;
-
-        if (projectileConfigCyan == null)
-        {
-            Debug.LogError("ChooseMenuController: Cyan character projectile config source missing.", this);
-            enabled = false;
-            return;
-        }
-
-        if (projectileConfigLavender == null)
-        {
-            Debug.LogError("ChooseMenuController: Lavender character projectile config source missing.", this);
-            enabled = false;
-            return;
-        }
-
-        characterChangeAnimator.SetFloat(characterChangeSpeedParameter, characterChangeSpeed);
-        characterChangeAnimator.SetTrigger(startChooseParameter);
-    }
-
-    private void OnEnable()
-    {
-        if (!initialized)
-        {
-            return;
-        }
-
-        selectedCharacter = RuntimeOptions.ConfirmedCharacter;
-
-        characterChanging = false;
-        characterSelecting = false;
-        characterSelected = false;
-        representing = false;
-
-        currentCharacter = selectedCharacter;
-        ChoosenType = currentCharacter;
-
-        characterChangeAnimator.SetTrigger(startChooseParameter);
-        characterChangeAnimator.SetFloat(characterChangeSpeedParameter, characterChangeSpeed);
-
-        ResetPreviewState();
-
-        StartCoroutine(RepresentCharacter());
-    }
-
-    public void SelectNextCharacter()
-    {
-        if (!initialized)
-        {
-            return;
-        }
-
-        if (characterChanging)
-        {
-            return;
-        }
-
-        if (characterSelecting)
-        {
-            return;
-        }
-
-        if (CharacterSelected)
-        {
-            return;
-        }
-
-        switch (currentCharacter)
-        {
-            case CharacterType.CharacterCyan:
-                {
-                    StartCoroutine(ChangeCharacter(
-                        CharacterType.CharacterLavender,
-                        cyanToLavenderParameter,
-                        cyanToLavenderBaseDuration));
-                    break;
-                }
-            case CharacterType.CharacterLavender:
-                {
-                    StartCoroutine(ChangeCharacter(
-                        CharacterType.CharacterCyan,
-                        lavenderToCyanParameter,
-                        lavenderToCyanBaseDuration));
-                    break;
-                }
-        }
-    }
-
-    public void StartGame()
-    {
-        if (!initialized)
-        {
-            return;
-        }
-
-        if (characterChanging)
-        {
-            return;
-        }
-
-        if (characterSelecting)
-        {
-            return;
-        }
-
-        if (CharacterSelected)
-        {
-            return;
-        }
-        float[] durations = new float[]
-        {
-            GetAdjustedDuration(chooseLavenderBaseDuration) + exitTimeDuration,
-            GetAdjustedDuration(chooseCyanBaseDuration) + exitTimeDuration,
-            fadeOutDuration
-            
-        };
-        fadeOutDuration = Mathf.Max(durations);
-        StartCoroutine(StartGameRoutine());
-        StartCoroutine(ChooseCharacter());
-    }
-
-    public void GoToMainMenu()
-    {
-        StartCoroutine(BackToMainMenu());
     }
 
     private IEnumerator ChangeCharacter(CharacterType targetCharacter, string triggerParameter, float baseDuration)
@@ -475,6 +344,18 @@ public class MenuChooseController : MonoBehaviour
 
         RuntimeOptions.ConfirmedCharacter = ChoosenType;
 
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (menuPhotonLauncher == null)
+            {
+                Debug.LogError("ChooseMenuController: MenuPhotonLauncher is missing for multiplayer start.", this);
+                yield break;
+            }
+
+            menuPhotonLauncher.StartMultiplayer(gameSceneName);
+            yield break;
+        }
+
         try
         {
             SceneManager.LoadSceneAsync(gameSceneName);
@@ -484,6 +365,144 @@ public class MenuChooseController : MonoBehaviour
             Debug.LogError("ChooseMenuController: Game Scene failed!", this);
         }
     }
+
+    private void Awake()
+    {
+        initialized = ValidateReferences();
+
+        if (!initialized)
+        {
+            enabled = false;
+            return;
+        }
+
+        projectileConfigCyan = playerConfigCyan.projectileConfig;
+        projectileConfigLavender = playerConfigLavender.projectileConfig;
+
+        if (projectileConfigCyan == null)
+        {
+            Debug.LogError("ChooseMenuController: Cyan character projectile config source missing.", this);
+            enabled = false;
+            return;
+        }
+
+        if (projectileConfigLavender == null)
+        {
+            Debug.LogError("ChooseMenuController: Lavender character projectile config source missing.", this);
+            enabled = false;
+            return;
+        }
+
+        characterChangeAnimator.SetFloat(characterChangeSpeedParameter, characterChangeSpeed);
+        characterChangeAnimator.SetTrigger(startChooseParameter);
+    }
+
+    private void OnEnable()
+    {
+        if (!initialized)
+        {
+            return;
+        }
+
+        selectedCharacter = RuntimeOptions.ConfirmedCharacter;
+
+        characterChanging = false;
+        characterSelecting = false;
+        characterSelected = false;
+        representing = false;
+
+        currentCharacter = selectedCharacter;
+        ChoosenType = currentCharacter;
+
+        characterChangeAnimator.SetTrigger(startChooseParameter);
+        characterChangeAnimator.SetFloat(characterChangeSpeedParameter, characterChangeSpeed);
+
+        ResetPreviewState();
+
+        StartCoroutine(RepresentCharacter());
+    }
+
+    public void SelectNextCharacter()
+    {
+        if (!initialized)
+        {
+            return;
+        }
+
+        if (characterChanging)
+        {
+            return;
+        }
+
+        if (characterSelecting)
+        {
+            return;
+        }
+
+        if (CharacterSelected)
+        {
+            return;
+        }
+
+        switch (currentCharacter)
+        {
+            case CharacterType.CharacterCyan:
+                {
+                    StartCoroutine(ChangeCharacter(
+                        CharacterType.CharacterLavender,
+                        cyanToLavenderParameter,
+                        cyanToLavenderBaseDuration));
+                    break;
+                }
+            case CharacterType.CharacterLavender:
+                {
+                    StartCoroutine(ChangeCharacter(
+                        CharacterType.CharacterCyan,
+                        lavenderToCyanParameter,
+                        lavenderToCyanBaseDuration));
+                    break;
+                }
+        }
+    }
+
+    public void StartGame()
+    {
+        if (!initialized)
+        {
+            return;
+        }
+
+        if (characterChanging)
+        {
+            return;
+        }
+
+        if (characterSelecting)
+        {
+            return;
+        }
+
+        if (CharacterSelected)
+        {
+            return;
+        }
+        float[] durations = new float[]
+        {
+            GetAdjustedDuration(chooseLavenderBaseDuration) + exitTimeDuration,
+            GetAdjustedDuration(chooseCyanBaseDuration) + exitTimeDuration,
+            fadeOutDuration
+            
+        };
+        fadeOutDuration = Mathf.Max(durations);
+        StartCoroutine(StartGameRoutine());
+        StartCoroutine(ChooseCharacter());
+    }
+
+    public void GoToMainMenu()
+    {
+        StartCoroutine(BackToMainMenu());
+    }
+
     private void ApplyCharacterData(CharacterType characterType)
     {
         switch (characterType)
@@ -603,7 +622,6 @@ public class MenuChooseController : MonoBehaviour
         {
             toRightButton.interactable = interactable;
         }
-
         if (startGameButton != null)
         {
             startGameButton.interactable = interactable;
@@ -611,6 +629,10 @@ public class MenuChooseController : MonoBehaviour
         if (backToMenu != null)
         {
             backToMenu.interactable = interactable;
+        }
+        if (useMultiplayerButton != null)
+        {
+            useMultiplayerButton.interactable = interactable;
         }
     }
 

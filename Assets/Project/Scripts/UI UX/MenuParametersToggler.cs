@@ -10,33 +10,45 @@ public class MenuParametersToggler : MonoBehaviour
     [SerializeField] Image checkmarkTPV;
 
     [Tooltip("TPV Checkbox")]
-    [SerializeField] bool useCheckboxTPV = false;
+    [SerializeField] bool useTPV = false;
 
 
     [Header("Use Gamepad Checkbox")]
-    [Tooltip("Thirt person view checkbox checkmark")]
+    [Tooltip("Use gamepad checkbox checkmark")]
     [SerializeField] Image checkmarkUseGamepad;
 
-    [Tooltip("TPV Checkbox")]
-    [SerializeField] bool useChecboxUseGamepad = false;
+    [Tooltip("Use gamepad Checkbox")]
+    [SerializeField] bool useGamepad = false;
+
+    [Header("Activate multiplayerMode")]
+    [Tooltip("Multiplayer mode checkbox checkmark")]
+    [SerializeField] Image checkmarkMultiplayerMode;
+
+    [Tooltip("Multiplayer mode Checkbox")]
+    [SerializeField] bool useMultiplayerMode = false;
 
     private void Awake()
     {
-        if (useCheckboxTPV && checkmarkTPV == null)
+        if (useTPV && checkmarkTPV == null)
         {
             Debug.LogError("CameraViewToggler: checkmarkTPV is missing.", this);
             return;
         }
-        if (useChecboxUseGamepad && checkmarkUseGamepad == null)
+        if (useGamepad && checkmarkUseGamepad == null)
         {
             Debug.LogError("CameraViewToggler: checkmarkUseGamepad is missing.", this);
+            return;
+        }
+        if (useMultiplayerMode && checkmarkMultiplayerMode == null)
+        {
+            Debug.LogError("CameraViewToggler: checkmarkMultiplayerMode is missing.", this);
             return;
         }
     }
 
     public void ToggleCameraTPV()
     {
-        if (!useCheckboxTPV)
+        if (!useTPV)
         {
             return;
         }
@@ -58,17 +70,26 @@ public class MenuParametersToggler : MonoBehaviour
     }
     public void ToggleUseGamepad()
     {
-        if (!useChecboxUseGamepad)
+        if (!useGamepad)
         {
             return;
         }
         RuntimeOptions.UseGamepad = !RuntimeOptions.UseGamepad;
         checkmarkUseGamepad.gameObject.SetActive(RuntimeOptions.UseGamepad);
     }
+    public void ToggleMultiplayerMode()
+    {
+        if (!useMultiplayerMode)
+        {
+            return;
+        }
+        RuntimeOptions.MultiplayerMode = !RuntimeOptions.MultiplayerMode;
+        checkmarkMultiplayerMode.gameObject.SetActive(RuntimeOptions.MultiplayerMode);
+    }
 
     private void OnEnable()
     {
-        if (useCheckboxTPV)
+        if (useTPV)
         {
             if (RuntimeOptions.ConfirmedCameraView == CameraViewType.ThirdPerson)
             {
@@ -80,9 +101,14 @@ public class MenuParametersToggler : MonoBehaviour
             }
         }
         
-        if (useChecboxUseGamepad)
+        if (useGamepad)
         {
             checkmarkUseGamepad.gameObject.SetActive(RuntimeOptions.UseGamepad);
+        }
+
+        if (useMultiplayerMode)
+        {
+            checkmarkMultiplayerMode.gameObject.SetActive(RuntimeOptions.MultiplayerMode);
         }
     }
 }

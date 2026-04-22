@@ -299,6 +299,7 @@ GameObject:
   - component: {fileID: 1745337049}
   - component: {fileID: 1707560655}
   - component: {fileID: 1707560666}
+  - component: {fileID: 2457392321551370228}
   m_Layer: 6
   m_Name: PlayerCyan
   m_TagString: Player
@@ -642,6 +643,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreManager: {fileID: 0}
+--- !u!114 &2457392321551370228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3059393593897093177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d65530bf7942e4408867181839cc0e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputBlocked: 0
 --- !u!1 &3059393594075156282
 GameObject:
   m_ObjectHideFlags: 0

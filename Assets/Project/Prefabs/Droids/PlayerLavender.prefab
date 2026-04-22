@@ -780,6 +780,7 @@ GameObject:
   - component: {fileID: 9197534813517148636}
   - component: {fileID: 853423677}
   - component: {fileID: 853423687}
+  - component: {fileID: 6220454931786857409}
   m_Layer: 6
   m_Name: PlayerLavender
   m_TagString: Player
@@ -1123,6 +1124,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreManager: {fileID: 0}
+--- !u!114 &6220454931786857409
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3893866321042812378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d65530bf7942e4408867181839cc0e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputBlocked: 0
 --- !u!1 &3893866321339804438
 GameObject:
   m_ObjectHideFlags: 0

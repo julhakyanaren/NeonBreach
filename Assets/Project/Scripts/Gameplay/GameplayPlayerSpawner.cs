@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 
 public class GameplayPlayerSpawner : MonoBehaviour
@@ -16,23 +18,66 @@ public class GameplayPlayerSpawner : MonoBehaviour
     [SerializeField] private CharacterType fallbackCharacterType;
 
     [Header("Spawn Listeners")]
-    [Tooltip("Objects that should be notified after player spawn, for example camera binder or HUD binder.")]
+    [Tooltip("Objects that should be notified after local player spawn, for example camera binder or HUD binder.")]
     [SerializeField] private List<MonoBehaviour> spawnListeners = new List<MonoBehaviour>();
+
+    [Header("Multiplayer Wait")]
+    [Tooltip("How long to wait for Photon room before giving up multiplayer spawn.")]
+    [Range(1f, 15f)]
+    [SerializeField] private float multiplayerRoomWaitTimeout = 8f;
+
+    [Header("Debug")]
+    [Tooltip("Log spawn flow details.")]
+    [SerializeField] private bool logSpawnFlow = false;
 
     private GameObject spawnedPlayer;
 
     private void Start()
     {
-        SpawnSelectedPlayer();
+        if (RuntimeOptions.MultiplayerMode == false)
+        {
+            SpawnSingleplayerPlayer();
+            return;
+        }
+
+        StartCoroutine(WaitForMultiplayerRoomAndSpawn());
     }
 
-    private void SpawnSelectedPlayer()
+    private IEnumerator WaitForMultiplayerRoomAndSpawn()
     {
-        GameObject targetPrefab = GetSelectedCharacterPrefab();
+        float elapsed = 0f;
+
+        while (PhotonNetwork.InRoom == false)
+        {
+            elapsed += Time.unscaledDeltaTime;
+
+            if (elapsed >= multiplayerRoomWaitTimeout)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Timed out while waiting for Photon room before multiplayer spawn.", this);
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        SpawnMultiplayerPlayer();
+    }
+
+    private void SpawnSingleplayerPlayer()
+    {
+        CharacterPrefabEntry targetEntry = GetSelectedCharacterEntry();
+
+        if (targetEntry == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: Target character entry was not found.", this);
+            return;
+        }
+
+        GameObject targetPrefab = targetEntry.SingleplayerPrefab;
 
         if (targetPrefab == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Target prefab was not found.", this);
+            Debug.LogError("GameplayPlayerSpawner: Singleplayer prefab was not found.", this);
             return;
         }
 
@@ -40,7 +85,7 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (selectedPlatform == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: No available spawn platform found.", this);
+            Debug.LogError("GameplayPlayerSpawner: No available spawn platform found for singleplayer.", this);
             return;
         }
 
@@ -48,7 +93,7 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (spawnPoint == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Selected platform spawn point is null.", this);
+            Debug.LogError("GameplayPlayerSpawner: Selected singleplayer spawn point is null.", this);
             return;
         }
 
@@ -58,44 +103,138 @@ public class GameplayPlayerSpawner : MonoBehaviour
             spawnPoint.rotation);
 
         selectedPlatform.DeactivatePlatform();
+
+        if (logSpawnFlow)
+        {
+            Debug.Log(
+                "GameplayPlayerSpawner: Spawned singleplayer character " +
+                RuntimeOptions.ConfirmedCharacter +
+                " on platform " + selectedPlatform.name,
+                this);
+        }
+
         NotifySpawnListeners(spawnedPlayer);
     }
 
-    private GameObject GetSelectedCharacterPrefab()
+    private void SpawnMultiplayerPlayer()
     {
-        CharacterType selectedType = RuntimeOptions.ConfirmedCharacter;
-        GameObject selectedPrefab = GetPrefabByCharacterType(selectedType);
-
-        if (selectedPrefab != null)
+        if (PhotonNetwork.InRoom == false)
         {
-            return selectedPrefab;
+            Debug.LogError("GameplayPlayerSpawner: Multiplayer spawn requested, but client is not in a Photon room.", this);
+            return;
         }
 
-        Debug.LogWarning("GameplayPlayerSpawner: Selected character prefab was not found. Fallback will be used.", this);
+        CharacterPrefabEntry targetEntry = GetSelectedCharacterEntry();
 
-        GameObject fallbackPrefab = GetPrefabByCharacterType(fallbackCharacterType);
-
-        if (fallbackPrefab == null)
+        if (targetEntry == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Fallback character prefab was not found.", this);
+            Debug.LogError("GameplayPlayerSpawner: Target character entry was not found.", this);
+            return;
+        }
+
+        string prefabName = targetEntry.MultiplayerPrefabName;
+
+        if (string.IsNullOrWhiteSpace(prefabName))
+        {
+            Debug.LogError("GameplayPlayerSpawner: Multiplayer prefab name is missing.", this);
+            return;
+        }
+
+        SpawnPlatformController selectedPlatform = GetPlatformForActorNumber(PhotonNetwork.LocalPlayer.ActorNumber);
+
+        if (selectedPlatform == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: No available spawn platform found for multiplayer.", this);
+            return;
+        }
+
+        Transform spawnPoint = selectedPlatform.SpawnPoint;
+
+        if (spawnPoint == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: Selected multiplayer spawn point is null.", this);
+            return;
+        }
+
+        object[] instantiationData = new object[]
+        {
+        (int)RuntimeOptions.ConfirmedCharacter
+        };
+
+        spawnedPlayer = PhotonNetwork.Instantiate(
+            prefabName,
+            spawnPoint.position,
+            spawnPoint.rotation,
+            0,
+            instantiationData);
+
+        if (spawnedPlayer == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: PhotonNetwork.Instantiate returned null.", this);
+            return;
+        }
+
+        PhotonView photonView = spawnedPlayer.GetComponent<PhotonView>();
+
+        if (photonView == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: PhotonView was not found on spawned multiplayer player.", spawnedPlayer);
+            return;
+        }
+
+        if (photonView.IsMine)
+        {
+            NotifySpawnListeners(spawnedPlayer);
+        }
+
+        if (logSpawnFlow)
+        {
+            Debug.Log(
+                "GameplayPlayerSpawner: Spawned multiplayer character " +
+                RuntimeOptions.ConfirmedCharacter +
+                " with ActorNumber " + PhotonNetwork.LocalPlayer.ActorNumber +
+                " using prefab " + prefabName,
+                this);
+        }
+    }
+
+    private CharacterPrefabEntry GetSelectedCharacterEntry()
+    {
+        CharacterType selectedType = RuntimeOptions.ConfirmedCharacter;
+        CharacterPrefabEntry selectedEntry = GetEntryByCharacterType(selectedType);
+
+        if (selectedEntry != null)
+        {
+            return selectedEntry;
+        }
+
+        Debug.LogWarning("GameplayPlayerSpawner: Selected character entry was not found. Fallback will be used.", this);
+
+        CharacterPrefabEntry fallbackEntry = GetEntryByCharacterType(fallbackCharacterType);
+
+        if (fallbackEntry == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: Fallback character entry was not found.", this);
             return null;
         }
 
-        return fallbackPrefab;
+        return fallbackEntry;
     }
 
-    private GameObject GetPrefabByCharacterType(CharacterType targetType)
+    private CharacterPrefabEntry GetEntryByCharacterType(CharacterType targetType)
     {
         for (int i = 0; i < characterPrefabs.Count; i++)
         {
-            if (characterPrefabs[i] == null)
+            CharacterPrefabEntry entry = characterPrefabs[i];
+
+            if (entry == null)
             {
                 continue;
             }
 
-            if (characterPrefabs[i].CharacterType == targetType)
+            if (entry.CharacterType == targetType)
             {
-                return characterPrefabs[i].PlayerPrefab;
+                return entry;
             }
         }
 
@@ -128,8 +267,47 @@ public class GameplayPlayerSpawner : MonoBehaviour
         return availablePlatforms[randomIndex];
     }
 
+    private SpawnPlatformController GetPlatformForActorNumber(int actorNumber)
+    {
+        List<SpawnPlatformController> availablePlatforms = new List<SpawnPlatformController>();
+
+        for (int i = 0; i < spawnPlatforms.Count; i++)
+        {
+            if (spawnPlatforms[i] == null)
+            {
+                continue;
+            }
+
+            if (spawnPlatforms[i].CanBeUsedForSpawn())
+            {
+                availablePlatforms.Add(spawnPlatforms[i]);
+            }
+        }
+
+        if (availablePlatforms.Count == 0)
+        {
+            return null;
+        }
+
+        int platformIndex = actorNumber - 1;
+
+        if (platformIndex < 0)
+        {
+            platformIndex = 0;
+        }
+
+        platformIndex = platformIndex % availablePlatforms.Count;
+        return availablePlatforms[platformIndex];
+    }
+
     private void NotifySpawnListeners(GameObject playerInstance)
     {
+        if (playerInstance == null)
+        {
+            Debug.LogError("GameplayPlayerSpawner: Cannot notify spawn listeners because player instance is null.", this);
+            return;
+        }
+
         for (int i = 0; i < spawnListeners.Count; i++)
         {
             if (spawnListeners[i] == null)

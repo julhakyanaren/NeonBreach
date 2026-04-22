@@ -81,6 +81,9 @@ public class PlayerShooter : MonoBehaviour
     [Tooltip("Reference to the Wwise player SFX controller.")]
     [SerializeField] private WwisePlayerSFXController playerSfxController;
 
+    [Tooltip("Local input blocker for this player.")]
+    [SerializeField] private PlayerInputBlocker inputBlocker;
+
     [Header("Debug / External State")]
     [Tooltip("Set true when player is dead.")]
     [SerializeField] private bool isDead = false;
@@ -141,6 +144,7 @@ public class PlayerShooter : MonoBehaviour
     private void Reset()
     {
         playerRotation = GetComponent<PlayerRotation>();
+        inputBlocker = GetComponent<PlayerInputBlocker>();
     }
 
     private void Awake()
@@ -148,6 +152,11 @@ public class PlayerShooter : MonoBehaviour
         if (playerRotation == null)
         {
             playerRotation = GetComponent<PlayerRotation>();
+        }
+
+        if (inputBlocker == null)
+        {
+            inputBlocker = GetComponent<PlayerInputBlocker>();
         }
 
         ApplyConfig();
@@ -224,7 +233,7 @@ public class PlayerShooter : MonoBehaviour
     {
         UpdateAnimationCoefficients();
 
-        if (RuntimeOptions.InputBlocked)
+        if (IsInputBlocked())
         {
             return;
         }
@@ -275,6 +284,21 @@ public class PlayerShooter : MonoBehaviour
         }
 
         Shoot();
+    }
+
+    private bool IsInputBlocked()
+    {
+        if (RuntimeOptions.InputBlocked)
+        {
+            return true;
+        }
+
+        if (inputBlocker != null && inputBlocker.IsBlocked)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void Shoot()
@@ -405,7 +429,7 @@ public class PlayerShooter : MonoBehaviour
 
     private void OnReloadPerformed(InputAction.CallbackContext context)
     {
-        if (RuntimeOptions.InputBlocked)
+        if (IsInputBlocked())
         {
             return;
         }
