@@ -61,6 +61,7 @@ MonoBehaviour:
   - ApplyDamageToTarget_RPC
   - RPC_PlayPickupFeedback
   - RPC_RequestDestroy
+  - RPC_ShowCommunicationBubble
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

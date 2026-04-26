@@ -393,25 +393,13 @@ public class DeathScreenController : MonoBehaviour
 
     public void LoadMenuScene()
     {
-        Time.timeScale = 1f;
-        RuntimeOptions.InputBlocked = false;
+        GameCanvasController controller =
+            FindFirstObjectByType<GameCanvasController>();
 
-        if (menuSceneLoadOperation != null && menuScenePreloadStarted)
+        if (controller != null)
         {
-            menuSceneLoadOperation.allowSceneActivation = true;
-
-            if (logStateChanges)
-            {
-                if (RuntimeOptions.Logging)
-                {
-                    Debug.Log("DeathScreenController: Activating preloaded menu scene.", this);
-                }
-            }
-
-            return;
+            controller.LoadMenuScene();
         }
-
-        SceneManager.LoadScene(menuSceneName);
     }
 
     private void UnloadMenuScene()

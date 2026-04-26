@@ -416,13 +416,6 @@ public class WaveManager : MonoBehaviourPunCallbacks
 
         isWaveRunning = false;
 
-        GameSessionStats stats = GameSessionStats.Instance;
-
-        if (stats != null)
-        {
-            stats.SetWave(waveIndex);
-        }
-
         if (WaveCompleted != null)
         {
             WaveCompleted.Invoke(waveIndex);
@@ -542,55 +535,13 @@ public class WaveManager : MonoBehaviourPunCallbacks
         aliveEnemiesCount = aliveEnemies.Count;
     }
 
-    public override void OnMasterClientSwitched(Player newMasterClient)
+    private void ClearAuthorityRuntimeState()
     {
-        if (!RuntimeOptions.MultiplayerMode)
+        if (waveLoopCoroutine != null)
         {
-            return;
+            StopCoroutine(waveLoopCoroutine);
+            waveLoopCoroutine = null;
         }
-
-        if (PhotonNetwork.LocalPlayer == null)
-        {
-            return;
-        }
-
-        if (newMasterClient == null)
-        {
-            return;
-        }
-
-        if (PhotonNetwork.LocalPlayer.ActorNumber == newMasterClient.ActorNumber)
-        {
-            if (autoStart)
-            {
-                StartWaveLoop();
-            }
-        }
-        else
-        {
-            StopWaveLoop();
-
-            if (waitForWavePropertyCoroutine == null)
-            {
-                waitForWavePropertyCoroutine = StartCoroutine(WaitForWaveRoomPropertyRoutine());
-            }
-        }
-    }
-
-    public override void OnLeftRoom()
-    {
-        StopWaveLoop();
-
-        if (waitForWavePropertyCoroutine != null)
-        {
-            StopCoroutine(waitForWavePropertyCoroutine);
-            waitForWavePropertyCoroutine = null;
-        }
-    }
-
-    private void OnDestroy()
-    {
-        StopWaveLoop();
 
         if (waitForWavePropertyCoroutine != null)
         {
@@ -612,10 +563,71 @@ public class WaveManager : MonoBehaviourPunCallbacks
 
         aliveEnemies.Clear();
         aliveEnemiesCount = 0;
+        isWaveRunning = false;
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.LocalPlayer == null)
+        {
+            return;
+        }
+
+        if (newMasterClient == null)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.LocalPlayer.ActorNumber == newMasterClient.ActorNumber)
+        {
+            ClearAuthorityRuntimeState();
+            LoadCurrentWaveFromRoom();
+
+            if (autoStart)
+            {
+                StartWaveLoop();
+            }
+
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log("WaveManager: Local client became new MasterClient. Wave loop restarted.", this);
+            }
+
+            return;
+        }
+
+        StopWaveLoop();
+
+        if (waitForWavePropertyCoroutine == null)
+        {
+            waitForWavePropertyCoroutine = StartCoroutine(WaitForWaveRoomPropertyRoutine());
+        }
+    }
+
+    public override void OnLeftRoom()
+    {
+        ClearAuthorityRuntimeState();
+    }
+
+    private void OnDestroy()
+    {
+        ClearAuthorityRuntimeState();
     }
 
     private void NotifyWaveChanged()
     {
+        GameSessionStats stats = GameSessionStats.Instance;
+
+        if (stats != null)
+        {
+            stats.RegisterWaveChange(CurrentWave);
+        }
+
         if (WaveChanged == null)
         {
             return;

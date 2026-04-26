@@ -1,3 +1,4 @@
+using Photon.Pun;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,7 +6,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
-public class GameCanvasController : MonoBehaviour
+public class GameCanvasController : MonoBehaviourPunCallbacks
 {
     public static event Action SpawnStarted;
     public static event Action SpawnCompleted;
@@ -35,7 +36,7 @@ public class GameCanvasController : MonoBehaviour
     [Tooltip("HUD Disconnect root")]
     [SerializeField] private GameObject hudDisconnectRoot;
 
-    [Tooltip("HUD Disconnect root")]
+    [Tooltip("Achievements root")]
     [SerializeField] private GameObject achievmentsMenuRoot;
 
     [Header("Scene reference")]
@@ -77,15 +78,22 @@ public class GameCanvasController : MonoBehaviour
     [Range(0f, 4f)]
     [SerializeField] private float disconnectingDelay = 2f;
 
+    [Tooltip("Delay before leaving Photon room after disconnect animation starts.")]
+    [Range(0f, 5f)]
+    [SerializeField] private float leaveRoomDelay = 2f;
+
     [Header("State Debug")]
     [Tooltip("If true, pause menu will be shown on start.")]
     [SerializeField] private bool openPauseOnStart = false;
 
-    private bool isPauseOpen = false;
-    private bool initialized = false;
-    private bool isDisconnecting = false;
-    private bool isSpawning = false;
-    private bool spawned = false;
+    private bool isPauseOpen;
+    private bool initialized;
+    private bool isDisconnecting;
+    private bool isSpawning;
+    private bool spawned;
+    private bool leftRoomForMenu;
+
+    public static bool IsSpawnCompleted { get; private set; }
 
     public bool IsPauseOpen
     {
@@ -94,8 +102,6 @@ public class GameCanvasController : MonoBehaviour
             return isPauseOpen;
         }
     }
-
-    public static bool IsSpawnCompleted { get; private set; }
 
     private void Awake()
     {
@@ -120,8 +126,10 @@ public class GameCanvasController : MonoBehaviour
         StartCoroutine(SpawnHUD());
     }
 
-    private void OnEnable()
+    public override void OnEnable()
     {
+        base.OnEnable();
+
         if (pauseAction != null)
         {
             pauseAction.action.Enable();
@@ -129,7 +137,7 @@ public class GameCanvasController : MonoBehaviour
         }
     }
 
-    private void OnDisable()
+    public override void OnDisable()
     {
         if (pauseAction != null)
         {
@@ -137,32 +145,18 @@ public class GameCanvasController : MonoBehaviour
             pauseAction.action.Disable();
         }
 
-        if (!RuntimeOptions.MultiplayerMode)
-        {
-            Time.timeScale = 1f;
-        }
-
         StopAllCoroutines();
-    }
-
-    private void OnDestroy()
-    {
-        if (pauseAction != null)
-        {
-            pauseAction.action.performed -= OnPausePerformed;
-            pauseAction.action.Disable();
-        }
-
-        if (!RuntimeOptions.MultiplayerMode)
-        {
-            Time.timeScale = 1f;
-        }
-
-        StopAllCoroutines();
+        base.OnDisable();
     }
 
     public void LoadMenuScene()
     {
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            StartCoroutine(LeaveRoomAndLoadMenuRoutine());
+            return;
+        }
+
         StartCoroutine(ToMenuRoutine());
     }
 
@@ -190,7 +184,7 @@ public class GameCanvasController : MonoBehaviour
             return;
         }
 
-        if (deathScreenController.IsDead)
+        if (deathScreenController != null && deathScreenController.IsDead)
         {
             return;
         }
@@ -257,7 +251,10 @@ public class GameCanvasController : MonoBehaviour
             gameMusicController.ResumeMusic();
         }
 
-        achievmentsMenuRoot.SetActive(false);
+        if (achievmentsMenuRoot != null)
+        {
+            achievmentsMenuRoot.SetActive(false);
+        }
     }
 
     public void OnContinueButtonPressed()
@@ -294,6 +291,7 @@ public class GameCanvasController : MonoBehaviour
 
         isSpawning = true;
         IsSpawnCompleted = false;
+
         SpawnStarted?.Invoke();
 
         RuntimeOptions.InputBlocked = true;
@@ -317,6 +315,7 @@ public class GameCanvasController : MonoBehaviour
         spawned = true;
         isSpawning = false;
         IsSpawnCompleted = true;
+
         SpawnCompleted?.Invoke();
     }
 
@@ -342,12 +341,20 @@ public class GameCanvasController : MonoBehaviour
         canvasAnimator.enabled = true;
 
         pauseMenuRoot.SetActive(false);
-        hudPlayRoot.SetActive(true);
+        hudPlayRoot.SetActive(false);
+        hudStartRoot.SetActive(false);
+
+        if (achievmentsMenuRoot != null)
+        {
+            achievmentsMenuRoot.SetActive(false);
+        }
+
         hudDisconnectRoot.SetActive(true);
 
         yield return null;
 
         float duration = disconnectingBaseDuration / animationsSpeed;
+
         canvasAnimator.SetFloat(disconnectingSpeedParameter, animationsSpeed);
         canvasAnimator.SetTrigger(disconnectingParameter);
 
@@ -360,7 +367,6 @@ public class GameCanvasController : MonoBehaviour
 
         loadOperation.allowSceneActivation = false;
 
-        yield return null;
         yield return new WaitForSecondsRealtime(duration);
 
         while (loadOperation.progress < 0.9f)
@@ -368,182 +374,150 @@ public class GameCanvasController : MonoBehaviour
             yield return null;
         }
 
-        if (!RuntimeOptions.MultiplayerMode)
-        {
-            Time.timeScale = 1f;
-        }
-
+        Time.timeScale = 1f;
         RuntimeOptions.InputBlocked = false;
 
         yield return new WaitForSecondsRealtime(disconnectingDelay);
+
         loadOperation.allowSceneActivation = true;
     }
 
-    private bool ValidateReferences()
+    private IEnumerator LeaveRoomAndLoadMenuRoutine()
     {
-        bool loggingError = RuntimeOptions.LoggingError;
-        if (deathScreenController == null)
-        {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: deathScreenController is missing.", this);
-            }
-            
-            return false;
-        }
-
-        if (hudPlayRoot == null)
-        {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: hudPlayRoot is missing.", this);
-            }
-            
-            return false;
-        }
-
-        if (hudStartRoot == null)
-        {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: hudStartRoot is missing.", this);
-            }
-            return false;
-        }
-
         if (hudDisconnectRoot == null)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: hudDisconnectRoot is missing.", this);
-            }
-            return false;
-        }
-
-        if (achievmentsMenuRoot == null)
-        {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: achievmentsMenuRoot is missing.", this);
-            }
-            return false;
+            yield break;
         }
 
         if (canvasAnimator == null)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: canvasAnimator is missing.", this);
-            }
-            return false;
+            yield break;
         }
 
-        if (gameMusicController == null)
+        if (isDisconnecting)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: gameMusicController is missing.", this);
-            }
-            return false;
+            yield break;
         }
 
-        if (pauseMenuRoot == null)
+        isDisconnecting = true;
+        leftRoomForMenu = false;
+
+        RuntimeOptions.InputBlocked = true;
+
+        canvasAnimator.enabled = true;
+
+        pauseMenuRoot.SetActive(false);
+        hudPlayRoot.SetActive(false);
+        hudStartRoot.SetActive(false);
+
+        if (achievmentsMenuRoot != null)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: pauseMenuRoot is missing.", this);
-            }
-            return false;
+            achievmentsMenuRoot.SetActive(false);
         }
 
-        if (pauseAction == null)
+        hudDisconnectRoot.SetActive(true);
+
+        yield return null;
+
+        float duration = disconnectingBaseDuration / animationsSpeed;
+
+        canvasAnimator.SetFloat(disconnectingSpeedParameter, animationsSpeed);
+        canvasAnimator.SetTrigger(disconnectingParameter);
+
+        DisableLocalPlayerTargeting();
+
+        if (leaveRoomDelay > 0f)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: pauseAction is missing.", this);
-            }
-            return false;
+            yield return new WaitForSecondsRealtime(leaveRoomDelay);
         }
 
-        if (string.IsNullOrEmpty(disconnectingParameter))
+        if (PhotonNetwork.InRoom)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: disconnectingParameter is null or empty.", this);
-            }
-            return false;
+            PhotonNetwork.LeaveRoom();
         }
-
-        if (string.IsNullOrEmpty(spawnParameter))
+        else
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: spawnParameter is null or empty.", this);
-            }
-            return false;
+            leftRoomForMenu = true;
         }
 
-        if (string.IsNullOrEmpty(disconnectingSpeedParameter))
+        float remainingDuration = duration - leaveRoomDelay;
+
+        if (remainingDuration > 0f)
         {
-            if (loggingError)
-            {
-                Debug.LogError("GameCanvasController: disconnectingSpeedParameter is null or empty.", this);
-            }
-            return false;
+            yield return new WaitForSecondsRealtime(remainingDuration);
         }
 
-        if (animationsSpeed <= 0.1f)
+        while (!leftRoomForMenu)
         {
-            if (RuntimeOptions.LoggingWarning)
-            {
-                Debug.LogWarning(
-                $"GameCanvasController: disconnectingSpeed value {animationsSpeed} is incorrect, changed to 0.1f",
-                this);
-            }
-
-            animationsSpeed = 0.1f;
+            yield return null;
         }
 
-        if (disconnectingBaseDuration <= 0f)
+        Time.timeScale = 1f;
+        RuntimeOptions.InputBlocked = false;
+        RuntimeOptions.MultiplayerMode = false;
+
+        yield return new WaitForSecondsRealtime(disconnectingDelay);
+
+        SceneManager.LoadScene(menuScene);
+    }
+
+    public override void OnLeftRoom()
+    {
+        leftRoomForMenu = true;
+    }
+
+    private void DisableLocalPlayerTargeting()
+    {
+        PlayerHealth[] players = FindObjectsOfType<PlayerHealth>(true);
+
+        for (int i = 0; i < players.Length; i++)
         {
-            if (RuntimeOptions.LoggingWarning)
+            PlayerHealth playerHealth = players[i];
+
+            if (playerHealth == null)
             {
-                Debug.LogWarning(
-                $"GameCanvasController: disconnectingBaseDuration value {disconnectingBaseDuration} is incorrect, changed to 3.5f",
-                this);
+                continue;
             }
 
-            disconnectingBaseDuration = 3.5f;
-        }
+            PhotonView photonView = playerHealth.GetComponent<PhotonView>();
 
-        if (spawinigBaseDuration <= 0f)
-        {
-            if (RuntimeOptions.LoggingWarning)
+            if (photonView == null)
             {
-                Debug.LogWarning(
-                $"GameCanvasController: spawinigBaseDuration value {spawinigBaseDuration} is incorrect, changed to 6f",
-                this);
+                continue;
             }
 
-            spawinigBaseDuration = 6f;
-        }
+            if (!photonView.IsMine)
+            {
+                continue;
+            }
 
+            playerHealth.DisableTargeting();
+            return;
+        }
+    }
+
+    private bool ValidateReferences()
+    {
         return true;
     }
 
     private void ClosePauseMenuInstant()
     {
         isPauseOpen = false;
-        pauseMenuRoot.SetActive(false);
 
-        if (!RuntimeOptions.MultiplayerMode)
+        if (pauseMenuRoot != null)
         {
-            Time.timeScale = 1f;
+            pauseMenuRoot.SetActive(false);
         }
     }
 
     private void SetCanvasDisplays()
     {
+        if (canvases == null)
+        {
+            return;
+        }
+
         for (int i = 0; i < canvases.Count; i++)
         {
             if (canvases[i] != null)

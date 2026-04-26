@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerHealth))]
+[RequireComponent(typeof(PlayerRotation))]
 [RequireComponent(typeof(PlayerShooter))]
 [RequireComponent(typeof(PlayerBuffReceiver))]
 [RequireComponent(typeof(PlayerInputBlocker))]
@@ -20,6 +21,9 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
     [Header("References")]
     [Tooltip("Player health component.")]
     [SerializeField] private PlayerHealth playerHealth;
+
+    [Tooltip("Reference of the player rotation script.")]
+    [SerializeField] private PlayerRotation playerRotation;
 
     [Tooltip("Player shooter component.")]
     [SerializeField] private PlayerShooter playerShooter;
@@ -61,6 +65,7 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
     private void Reset()
     {
         playerHealth = GetComponent<PlayerHealth>();
+        playerRotation = GetComponent<PlayerRotation>();
         playerShooter = GetComponent<PlayerShooter>();
         playerBuffReceiver = GetComponent<PlayerBuffReceiver>();
         inputBlocker = GetComponent<PlayerInputBlocker>();
@@ -73,6 +78,11 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
         if (playerHealth == null)
         {
             playerHealth = GetComponent<PlayerHealth>();
+        }
+
+        if (playerRotation == null)
+        {
+            playerRotation = GetComponent<PlayerRotation>();
         }
 
         if (playerShooter == null)
@@ -151,7 +161,7 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
         }
     }
 
-    public static void RespawnLocalPlayerFromUI()
+    public static void RespawnLocalPlayerFromUI(bool isAlive)
     {
         if (localInstance == null)
         {
@@ -162,8 +172,14 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
 
             return;
         }
-
-        localInstance.RespawnLocalPlayer();
+        if (isAlive)
+        {
+            localInstance.RestartAliveLocalPlayer();
+        }
+        else
+        {
+            localInstance.RespawnLocalPlayer();
+        }
     }
 
     private Transform FindEmptySpawnpoint(out bool foundEmpty)
@@ -259,7 +275,31 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
         {
             return;
         }
+        ExecuteRespawnFlow();
+    }
 
+    public void RestartAliveLocalPlayer()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        if (!photonView.IsMine)
+        {
+            return;
+        }
+
+        ExecuteRespawnFlow();
+    }
+
+    private void ExecuteRespawnFlow()
+    {
         bool foundEmpty;
         Transform point = FindEmptySpawnpoint(out foundEmpty);
 
@@ -270,6 +310,11 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
         else
         {
             TeleportToRespawnPoint();
+        }
+
+        if (playerRotation != null)
+        {
+            playerRotation.ForceLookForward();
         }
 
         if (playerBuffReceiver != null)
@@ -311,9 +356,7 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
                 Debug.Log("PlayerMultiplayerRespawnController: Local player respawned.", this);
             }
         }
-
     }
-
     private void TeleportToRespawnPoint()
     {
         if (!hasInitialSpawnPoint)
@@ -345,11 +388,9 @@ public class PlayerMultiplayerRespawnController : MonoBehaviour
             return;
         }
 
-        Vector3 targetPosition =
-            targetPoint.position + Vector3.up * respawnHeightOffset;
+        Vector3 targetPosition = targetPoint.position + Vector3.up * respawnHeightOffset;
 
-        Quaternion targetRotation =
-            targetPoint.rotation;
+        Quaternion targetRotation = targetPoint.rotation;
 
         if (playerRigidbody != null)
         {

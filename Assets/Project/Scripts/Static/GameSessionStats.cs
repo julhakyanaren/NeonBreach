@@ -23,6 +23,9 @@ public class GameSessionStats : MonoBehaviour
 
     private bool sessionFinished;
 
+    private int lastObservedWaveIndex;
+    private bool hasObservedWaveIndex;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -114,14 +117,36 @@ public class GameSessionStats : MonoBehaviour
         TotalPickupsCollected++;
     }
 
-    public void SetWave(int waveNumber)
+    //public void SetWave(int waveNumber)
+    //{
+    //    if (waveNumber < 0)
+    //    {
+    //        waveNumber = 0;
+    //    }
+
+    //    WavesSurvived = waveNumber;
+    //}
+
+    public void RegisterWaveChange(int newWaveIndex)
     {
-        if (waveNumber < 0)
+        if (newWaveIndex <= 0)
         {
-            waveNumber = 0;
+            return;
         }
 
-        WavesSurvived = waveNumber;
+        if (!hasObservedWaveIndex)
+        {
+            hasObservedWaveIndex = true;
+            lastObservedWaveIndex = newWaveIndex;
+            return;
+        }
+
+        if (newWaveIndex > lastObservedWaveIndex)
+        {
+            WavesSurvived++;
+        }
+
+        lastObservedWaveIndex = newWaveIndex;
     }
 
     public float GetAccuracy()
@@ -172,6 +197,8 @@ public class GameSessionStats : MonoBehaviour
         FireRatePickupsCollected = 0;
         SpeedPickupsCollected = 0;
         TimeSurvived = 0f;
+        lastObservedWaveIndex = 0;
+        hasObservedWaveIndex = false;
         sessionFinished = false;
     }
 

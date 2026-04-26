@@ -481,4 +481,17 @@ public class PlayerRotation : MonoBehaviour
         rotationMultiplier = 1f;
         rotationSpeed = baseRotationSpeed;
     }
+
+    public void ForceLookForward()
+    {
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+
+        if (forward.sqrMagnitude <= 0.001f)
+        {
+            forward = Vector3.forward;
+        }
+
+        CurrentAimPoint = transform.position + forward.normalized * 10f;
+    }
 }

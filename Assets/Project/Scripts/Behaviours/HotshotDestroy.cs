@@ -189,6 +189,12 @@ public class HotshotDestroy : MonoBehaviour
             if (PhotonNetwork.IsMasterClient == true)
             {
                 yield return new WaitForSeconds(destroyAfterDie);
+
+                if (hotshotWeaponVisual != null)
+                {
+                    Destroy(hotshotWeaponVisual);
+                }
+
                 PhotonNetwork.Destroy(gameObject);
             }
 

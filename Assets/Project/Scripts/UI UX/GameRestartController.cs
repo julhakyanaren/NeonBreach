@@ -3,27 +3,40 @@ using UnityEngine.SceneManagement;
 
 public class GameRestartController : MonoBehaviour
 {
-    [ContextMenu("Reset Scene")]
-    private void ResetScene()
-    {
-        RestartCurrentRun();
-    }
 
     private bool isRestartInProgress;
 
-    public void RestartCurrentRun()
+    public void RespawnPlayerMP()
     {
         if (RuntimeOptions.MultiplayerMode)
         {
-            PlayerMultiplayerRespawnController.RespawnLocalPlayerFromUI();
+            PlayerMultiplayerRespawnController.RespawnLocalPlayerFromUI(isAlive: false);
             return;
         }
+        else
+        {
+            ResetPlayerSP();
+        }
+    }
+    public void ResetPlayerMP()
+    {
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            PlayerMultiplayerRespawnController.RespawnLocalPlayerFromUI(isAlive: true);
+            return;
+        }
+        else
+        {
+            ResetPlayerSP();
+        }
+    }
 
+    private void ResetPlayerSP()
+    {
         if (isRestartInProgress)
         {
             return;
         }
-
         isRestartInProgress = true;
 
         Time.timeScale = 1f;
