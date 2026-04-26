@@ -1,4 +1,5 @@
 using System;
+using Photon.Pun;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,6 +17,9 @@ public class DeathScreenController : MonoBehaviour
 
     [Tooltip("Animator trigger name used to open death screen.")]
     [SerializeField] private string showTriggerName = "ShowDeathScreen";
+
+    [Tooltip("Optional animator trigger name used to hide death screen.")]
+    [SerializeField] private string hideTriggerName = "";
 
     [Header("Scene Loading")]
     [Tooltip("Main menu scene name.")]
@@ -63,7 +67,7 @@ public class DeathScreenController : MonoBehaviour
     [Tooltip("Block gameplay input when death screen is opened.")]
     [SerializeField] private bool blockInputOnDeath = true;
 
-    [Tooltip("Pause gameplay with Time.timeScale when death screen is opened.")]
+    [Tooltip("Pause gameplay with Time.timeScale when death screen is opened. Only used in singleplayer.")]
     [SerializeField] private bool stopTimeOnDeath = true;
 
     [Header("Debug")]
@@ -102,6 +106,14 @@ public class DeathScreenController : MonoBehaviour
             return;
         }
 
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (!IsLocalPlayerDead())
+            {
+                return;
+            }
+        }
+
         isOpened = true;
 
         if (blockInputOnDeath)
@@ -109,9 +121,12 @@ public class DeathScreenController : MonoBehaviour
             RuntimeOptions.InputBlocked = true;
         }
 
-        if (GameSessionStats.Instance != null)
+        if (!RuntimeOptions.MultiplayerMode)
         {
-            GameSessionStats.Instance.FinishSession();
+            if (GameSessionStats.Instance != null)
+            {
+                GameSessionStats.Instance.FinishSession();
+            }
         }
 
         if (deathScreenCanvas != null)
@@ -121,17 +136,58 @@ public class DeathScreenController : MonoBehaviour
 
         UpdateStatsView();
         OpenDeathScreen();
-        PreloadMenuScene();
 
-        if (stopTimeOnDeath)
+        if (!RuntimeOptions.MultiplayerMode)
         {
-            Time.timeScale = 0f;
+            PreloadMenuScene();
+
+            if (stopTimeOnDeath)
+            {
+                Time.timeScale = 0f;
+            }
         }
 
         if (logStateChanges)
         {
-            Debug.Log("DeathScreenController: Death screen opened.", this);
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log("DeathScreenController: Death screen opened.", this);
+            }
         }
+    }
+
+    private bool IsLocalPlayerDead()
+    {
+        PlayerHealth[] playerHealths = FindObjectsOfType<PlayerHealth>(true);
+
+        for (int i = 0; i < playerHealths.Length; i++)
+        {
+            PlayerHealth playerHealth = playerHealths[i];
+
+            if (playerHealth == null)
+            {
+                continue;
+            }
+
+            PhotonView playerPhotonView = playerHealth.GetComponent<PhotonView>();
+
+            if (playerPhotonView == null)
+            {
+                continue;
+            }
+
+            if (!playerPhotonView.IsMine)
+            {
+                continue;
+            }
+
+            if (playerHealth.IsDead)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void Update()
@@ -152,7 +208,10 @@ public class DeathScreenController : MonoBehaviour
 
             if (logStateChanges)
             {
-                Debug.Log("DeathScreenController: Menu scene preloaded and ready.", this);
+                if (RuntimeOptions.Logging)
+                {
+                    Debug.Log("DeathScreenController: Menu scene preloaded and ready.", this);
+                }
             }
         }
     }
@@ -161,7 +220,11 @@ public class DeathScreenController : MonoBehaviour
     {
         if (GameSessionStats.Instance == null)
         {
-            Debug.LogWarning("DeathScreenController: GameSessionStats instance is missing.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("DeathScreenController: GameSessionStats instance is missing.", this);
+            }
+
             return;
         }
 
@@ -234,16 +297,56 @@ public class DeathScreenController : MonoBehaviour
 
     private void OpenDeathScreen()
     {
-        if (deathScreenAnimator == null)
+        if (deathScreenAnimator != null)
         {
-            Debug.LogWarning("DeathScreenController: Death screen animator is missing.", this);
-            return;
+            deathScreenAnimator.ResetTrigger(showTriggerName);
+            deathScreenAnimator.SetTrigger(showTriggerName);
+        }
+        else
+        {
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("DeathScreenController: Death screen animator is missing.", this);
+            }
         }
 
-        deathScreenAnimator.ResetTrigger(showTriggerName);
-        deathScreenAnimator.SetTrigger(showTriggerName);
-
         IsDead = true;
+        DeathScreenOpened?.Invoke();
+    }
+
+    public void CloseAfterRespawn()
+    {
+        isOpened = false;
+        IsDead = false;
+
+        RuntimeOptions.InputBlocked = false;
+
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            Time.timeScale = 1f;
+        }
+
+        if (deathScreenAnimator != null)
+        {
+            if (!string.IsNullOrWhiteSpace(hideTriggerName))
+            {
+                deathScreenAnimator.ResetTrigger(hideTriggerName);
+                deathScreenAnimator.SetTrigger(hideTriggerName);
+            }
+        }
+
+        if (deathScreenCanvas != null)
+        {
+            deathScreenCanvas.SetActive(false);
+        }
+
+        if (logStateChanges)
+        {
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log("DeathScreenController: Death screen closed after respawn.", this);
+            }
+        }
     }
 
     private void PreloadMenuScene()
@@ -255,7 +358,11 @@ public class DeathScreenController : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(menuSceneName))
         {
-            Debug.LogWarning("DeathScreenController: Menu scene name is empty.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("DeathScreenController: Menu scene name is empty.", this);
+            }
+
             return;
         }
 
@@ -263,7 +370,11 @@ public class DeathScreenController : MonoBehaviour
 
         if (menuSceneLoadOperation == null)
         {
-            Debug.LogWarning("DeathScreenController: Failed to start menu scene preload.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("DeathScreenController: Failed to start menu scene preload.", this);
+            }
+
             return;
         }
 
@@ -273,7 +384,10 @@ public class DeathScreenController : MonoBehaviour
 
         if (logStateChanges)
         {
-            Debug.Log("DeathScreenController: Started preloading menu scene.", this);
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log("DeathScreenController: Started preloading menu scene.", this);
+            }
         }
     }
 
@@ -288,7 +402,10 @@ public class DeathScreenController : MonoBehaviour
 
             if (logStateChanges)
             {
-                Debug.Log("DeathScreenController: Activating preloaded menu scene.", this);
+                if (RuntimeOptions.Logging)
+                {
+                    Debug.Log("DeathScreenController: Activating preloaded menu scene.", this);
+                }
             }
 
             return;

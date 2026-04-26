@@ -61,14 +61,22 @@ public class PlayerHudBinder : MonoBehaviour
 
     private void ResolveReferences()
     {
-        if (playerHealth == null)
+        if (RuntimeOptions.MultiplayerMode == false)
         {
-            playerHealth = FindFirstObjectByType<PlayerHealth>();
-        }
+            if (playerHealth == null)
+            {
+                playerHealth = FindFirstObjectByType<PlayerHealth>();
+            }
 
-        if (playerShooter == null)
-        {
-            playerShooter = FindFirstObjectByType<PlayerShooter>();
+            if (playerShooter == null)
+            {
+                playerShooter = FindFirstObjectByType<PlayerShooter>();
+            }
+
+            if (playerBuffReceiver == null)
+            {
+                playerBuffReceiver = FindFirstObjectByType<PlayerBuffReceiver>();
+            }
         }
 
         if (waveManager == null)
@@ -76,15 +84,24 @@ public class PlayerHudBinder : MonoBehaviour
             waveManager = FindFirstObjectByType<WaveManager>();
         }
 
-        if (playerBuffReceiver == null)
-        {
-            playerBuffReceiver = FindFirstObjectByType<PlayerBuffReceiver>();
-        }
-
         if (scoreManager == null)
         {
             scoreManager = FindFirstObjectByType<ScoreManager>();
         }
+    }
+
+    public void BindLocalPlayer(PlayerHealth newPlayerHealth, PlayerShooter newPlayerShooter, PlayerBuffReceiver newPlayerBuffReceiver)
+    {
+        UnsubscribeAll();
+
+        playerHealth = newPlayerHealth;
+        playerShooter = newPlayerShooter;
+        playerBuffReceiver = newPlayerBuffReceiver;
+
+        SubscribeAll();
+        RefreshAll();
+
+        initialized = true;
     }
 
     private void SubscribeAll()
@@ -161,7 +178,7 @@ public class PlayerHudBinder : MonoBehaviour
 
         if (playerShooter != null)
         {
-            HandleAmmoChanged(playerShooter.CurrentAmmo, playerShooter.MagazineSize);
+            HandleAmmoChanged(playerShooter.GetCurrentAmmo(), playerShooter.GetMagazineSize());
         }
 
         if (waveManager != null)

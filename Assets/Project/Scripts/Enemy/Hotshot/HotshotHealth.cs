@@ -1,9 +1,10 @@
-using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(EnemyDeathNotifier))]
 [RequireComponent(typeof(HotshotController))]
 [RequireComponent(typeof(HotshotShooter))]
+[RequireComponent(typeof(PhotonView))]
 public class HotshotHealth : MonoBehaviour, IDamageable, IWaveScalable
 {
     [Header("Config source")]
@@ -49,6 +50,7 @@ public class HotshotHealth : MonoBehaviour, IDamageable, IWaveScalable
     [Tooltip("Log health changes to Console.")]
     [SerializeField] private bool logChanges = true;
 
+    private PhotonView photonView;
     private bool isDead = false;
 
     public bool IsDead
@@ -117,10 +119,17 @@ public class HotshotHealth : MonoBehaviour, IDamageable, IWaveScalable
         {
             deathNotifier = GetComponent<EnemyDeathNotifier>();
         }
+
+        if (hotshotDestroy == null)
+        {
+            hotshotDestroy = GetComponent<HotshotDestroy>();
+        }
     }
 
     private void Awake()
     {
+        photonView = GetComponent<PhotonView>();
+
         if (hotshotController == null)
         {
             hotshotController = GetComponent<HotshotController>();
@@ -188,13 +197,20 @@ public class HotshotHealth : MonoBehaviour, IDamageable, IWaveScalable
 
         if (logChanges)
         {
-            Debug.Log($"{gameObject.name} took {damageToApply} damage. HP: {CurrentHealth}/{MaxHealth}");
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log($"{gameObject.name} took {damageToApply} damage. HP: {CurrentHealth}/{MaxHealth}");
+            }
+            
         }
 
-        if (CurrentHealth <= 0f)
+        if (CurrentHealth > 0f)
         {
-            Die();
+            return;
         }
+
+        CurrentHealth = 0f;
+        Die();
     }
 
     private void TryAwardScore(float damageDealt, GameObject damageDealer)
@@ -246,6 +262,38 @@ public class HotshotHealth : MonoBehaviour, IDamageable, IWaveScalable
             return;
         }
 
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+
+            if (photonView == null)
+            {
+                return;
+            }
+
+            photonView.RPC(nameof(RPC_Die), RpcTarget.All);
+            return;
+        }
+
+        DieLocal();
+    }
+
+    [PunRPC]
+    private void RPC_Die()
+    {
+        if (IsDead)
+        {
+            return;
+        }
+
+        DieLocal();
+    }
+
+    private void DieLocal()
+    {
         IsDead = true;
 
         if (deathNotifier != null)
@@ -265,12 +313,28 @@ public class HotshotHealth : MonoBehaviour, IDamageable, IWaveScalable
 
         if (hotshotDestroy != null)
         {
-            hotshotDestroy.StartDestroy(logChanges, hotshotController.CurrentWaveIndex);
+            int currentWaveIndex = 0;
+
+            if (hotshotController != null)
+            {
+                currentWaveIndex = hotshotController.CurrentWaveIndex;
+            }
+
+            hotshotDestroy.StartDestroy(logChanges, currentWaveIndex);
+            return;
         }
-        else
+
+        if (PhotonNetwork.InRoom == true)
         {
-            Destroy(gameObject);
+            if (PhotonNetwork.IsMasterClient == true)
+            {
+                PhotonNetwork.Destroy(gameObject);
+            }
+
+            return;
         }
+
+        Destroy(gameObject);
     }
 
     private void OnDestroy()

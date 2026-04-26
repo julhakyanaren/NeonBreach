@@ -138,13 +138,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pickupType: 4
   value: 1.5
-  duration: 10
+  duration: 20
   pickupAnimator: {fileID: 2054754132246696579}
   pickupTriggerName: PickUp
   destroyDelay: 4.5
   triggerCollider: {fileID: 2310978157464041718}
   gameplaySfxController: {fileID: 8630967318425990007}
   sfxSource: {fileID: 0}
+  photonView: {fileID: 0}
   isPickedUp: 0
   isPowerUpSfxPlaying: 0
 --- !u!114 &8630967318425990007

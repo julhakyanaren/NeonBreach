@@ -93,12 +93,18 @@ public class HotshotAimSensor : MonoBehaviour
 
         if (firePoint == null)
         {
-            Debug.LogWarning($"{name}: HotshotAimSensor has no FirePoint assigned.");
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning($"{name}: HotshotAimSensor has no FirePoint assigned.");
+            }
         }
 
         if (weaponPitchPivot == null)
         {
-            Debug.LogWarning($"{name}: HotshotAimSensor has no Weapon Pitch Pivot assigned.");
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning($"{name}: HotshotAimSensor has no Weapon Pitch Pivot assigned.");
+            }
         }
     }
 

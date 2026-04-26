@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
@@ -22,12 +23,18 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [Tooltip("Current incoming damage multiplier. 1 = normal damage, lower values reduce damage.")]
     [SerializeField] private float damageMultiplier = 1f;
 
+    [Header("Networking")]
+    [Tooltip("PhotonView used to detect ownership in multiplayer mode.")]
+    [SerializeField] private PhotonView photonView;
+
     [Header("Debug")]
     [Tooltip("Log health changes to Console.")]
     [SerializeField] private bool logChanges = true;
 
     [Tooltip("Make player invincible.")]
     [SerializeField] private bool makeInvincible = false;
+
+    [SerializeField] private bool targeted = false;
 
     private float currentHealth;
     private bool isDead = false;
@@ -113,11 +120,45 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
+    private void Reset()
+    {
+        photonView = GetComponent<PhotonView>();
+    }
+
     private void Awake()
     {
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
         ApplyConfig();
         currentHealth = maxHealth;
         NotifyHealthChanged();
+    }
+    private void Update()
+    {
+        targeted = IsTargetable;
+    }
+
+    private bool ShouldIgnoreNetworkStateChange()
+    {
+        if (RuntimeOptions.MultiplayerMode == false)
+        {
+            return false;
+        }
+
+        if (photonView == null)
+        {
+            return false;
+        }
+
+        if (photonView.IsMine == false)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public void EnableTargeting()
@@ -144,6 +185,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void ApplyDamage(float damage, GameObject damageDealer)
     {
+        if (ShouldIgnoreNetworkStateChange())
+        {
+            return;
+        }
+
         if (makeInvincible)
         {
             return;
@@ -174,6 +220,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             Die();
         }
     }
+
     public void ApplyDamage(float damage)
     {
         ApplyDamage(damage, null);
@@ -181,6 +228,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void RestoreHealth(float amount)
     {
+        if (ShouldIgnoreNetworkStateChange())
+        {
+            return;
+        }
+
         if (IsDead)
         {
             return;
@@ -205,6 +257,27 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
+    public void RespawnFullHealth()
+    {
+        if (ShouldIgnoreNetworkStateChange())
+        {
+            return;
+        }
+
+        IsDead = false;
+        ResetDamageMultiplier();
+
+        CurrentHealth = MaxHealth;
+        NotifyHealthChanged();
+
+        EnableTargeting();
+
+        if (logChanges)
+        {
+            Debug.Log($"{gameObject.name} respawned with full HP: {CurrentHealth}/{MaxHealth}", this);
+        }
+    }
+
     public void SetDamageMultiplier(float multiplier)
     {
         if (multiplier <= 0f)
@@ -222,6 +295,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void Die()
     {
+        if (ShouldIgnoreNetworkStateChange())
+        {
+            return;
+        }
+
         if (IsDead)
         {
             return;

@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -60,12 +61,22 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("Animator on the visual player model.")]
     [SerializeField] private Animator characterAnimator;
 
+    [Tooltip("Local input blocker for this player.")]
+    [SerializeField] private PlayerInputBlocker inputBlocker;
+
+    [Header("Networking")]
+    [Tooltip("PhotonView used to detect ownership in multiplayer mode.")]
+    [SerializeField] private PhotonView photonView;
+
+    private bool ownsMoveInput;
+
     private float baseMoveSpeed;
+    private float animatorSpeedX;
+    private float animatorSpeedY;
+
     private Vector2 moveInput;
     private Vector3 moveDirection;
     private Camera cachedMainCamera;
-    private float animatorSpeedX;
-    private float animatorSpeedY;
 
     private static readonly int SpeedXHash = Animator.StringToHash("SpeedX");
     private static readonly int SpeedYHash = Animator.StringToHash("SpeedY");
@@ -82,10 +93,16 @@ public class PlayerMovement : MonoBehaviour
     {
         playerRigidbody = GetComponent<Rigidbody>();
         playerCapsuleCollider = GetComponent<CapsuleCollider>();
+        inputBlocker = GetComponent<PlayerInputBlocker>();
     }
 
     private void Awake()
     {
+        if (RuntimeOptions.MultiplayerMode && photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
         if (playerRigidbody == null)
         {
             playerRigidbody = GetComponent<Rigidbody>();
@@ -94,6 +111,11 @@ public class PlayerMovement : MonoBehaviour
         if (playerCapsuleCollider == null)
         {
             playerCapsuleCollider = GetComponent<CapsuleCollider>();
+        }
+
+        if (inputBlocker == null)
+        {
+            inputBlocker = GetComponent<PlayerInputBlocker>();
         }
 
         ApplyConfig();
@@ -112,19 +134,30 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnEnable()
     {
-        if (moveAction != null)
+        ownsMoveInput = false;
+
+        if (moveAction == null || moveAction.action == null)
         {
-            moveAction.action.Enable();
+            return;
         }
+
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return;
+        }
+
+        moveAction.action.Enable();
+        ownsMoveInput = true;
     }
 
     private void OnDisable()
     {
-        if (moveAction != null)
+        if (ownsMoveInput && moveAction != null && moveAction.action != null)
         {
             moveAction.action.Disable();
         }
 
+        ownsMoveInput = false;
         externalVelocity = Vector3.zero;
         animatorSpeedX = 0f;
         animatorSpeedY = 0f;
@@ -138,6 +171,13 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            externalVelocity = Vector3.zero;
+            return;
+        }
+
         moveInput = ReadMoveInput();
 
         if (characterAnimator != null)
@@ -149,9 +189,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return;
+        }
+
         StabilizeRotation();
 
-        if (RuntimeOptions.InputBlocked)
+        if (IsInputBlocked())
         {
             animatorSpeedX = 0f;
             animatorSpeedY = 0f;
@@ -177,8 +222,28 @@ public class PlayerMovement : MonoBehaviour
             externalVelocityDamping * Time.fixedDeltaTime);
     }
 
+    private bool IsInputBlocked()
+    {
+        if (inputBlocker != null && inputBlocker.IsBlocked)
+        {
+            return true;
+        }
+
+        if (RuntimeOptions.InputBlocked)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private Vector2 ReadMoveInput()
     {
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return Vector2.zero;
+        }
+
         if (moveAction == null)
         {
             return Vector2.zero;

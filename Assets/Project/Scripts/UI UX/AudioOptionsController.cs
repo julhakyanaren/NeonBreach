@@ -58,51 +58,77 @@ public class AudioOptionsController : MonoBehaviour
 
     private bool ValidateReferences()
     {
+        bool loggingError = RuntimeOptions.LoggingError;
         if (wwiseMusicRtpcApplier == null)
         {
-            Debug.LogError("MenuOptionsController: wwiseMusicRtpcApplier is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: wwiseMusicRtpcApplier is missing.", this);
+            }
             return false;
         }
 
         if (wwiseSfxRtpcApplier == null)
         {
-            Debug.LogError("MenuOptionsController: wwiseSfxRtpcApplier is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: wwiseSfxRtpcApplier is missing.", this);
+            }
             return false;
         }
 
         if (sliderVolumeSFX == null)
         {
-            Debug.LogError("MenuOptionsController: sliderVolumeSFX is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: sliderVolumeSFX is missing.", this);
+            }
             return false;
         }
 
         if (sliderVolumeMusic == null)
         {
-            Debug.LogError("MenuOptionsController: sliderVolumeMusic is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: sliderVolumeMusic is missing.", this);
+            }
             return false;
         }
 
         if (sliderVolumeOverall == null)
         {
-            Debug.LogError("MenuOptionsController: sliderVolumeOverall is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: sliderVolumeOverall is missing.", this);
+            }
+            
             return false;
         }
 
         if (percentTMP_SFX == null)
         {
-            Debug.LogError("MenuOptionsController: percentTMP_SFX is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: percentTMP_SFX is missing.", this);
+            }
             return false;
         }
 
         if (percentTMP_Music == null)
         {
-            Debug.LogError("MenuOptionsController: percentTMP_Music is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: percentTMP_Music is missing.", this);
+            }
             return false;
         }
 
         if (percentTMP_Overall == null)
         {
-            Debug.LogError("MenuOptionsController: percentTMP_Overall is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("MenuOptionsController: percentTMP_Overall is missing.", this);
+            }
             return false;
         }
 

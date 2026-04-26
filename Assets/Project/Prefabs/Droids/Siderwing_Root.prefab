@@ -53,6 +53,7 @@ GameObject:
   - component: {fileID: 4304130423634218259}
   - component: {fileID: 4491580277259664184}
   - component: {fileID: 1968836618562089941}
+  - component: {fileID: 4915335779002758075}
   m_Layer: 7
   m_Name: Siderwing_Root
   m_TagString: Enemy
@@ -114,7 +115,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 84
-  m_CollisionDetection: 1
+  m_CollisionDetection: 3
 --- !u!114 &1700983287944909795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,6 +149,7 @@ MonoBehaviour:
   enemyRigidbody: {fileID: 1700983287944909794}
   enemyAnimator: {fileID: 1700983287944909797}
   enemySfxController: {fileID: 4304130423634218259}
+  photonView: {fileID: 0}
   movementSensor: {fileID: 6763360783414659285}
   currentWaveIndex: 0
   target: {fileID: 0}
@@ -181,6 +183,7 @@ MonoBehaviour:
   saberwingController: {fileID: 1700983287944909795}
   saberwingDestroy: {fileID: 944522126210443556}
   deathNotifier: {fileID: 8621267079452925670}
+  photonView: {fileID: 0}
 --- !u!114 &7207943439214650400
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -271,15 +274,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f508f08461b1b14185b2654e60f6aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseDropChance: 0.1
-  dropChancePerWave: 0.02
-  maxDropChance: 0.5
+  baseDropChance: 0.2
+  dropChancePerWave: 0.05
+  maxDropChance: 0.8
   pickupPrefabs:
   - {fileID: 2418902139566094890, guid: 21b31d0c0c4d26243a3d33657698cf79, type: 3}
   - {fileID: 4651156193632940941, guid: bbb1860f03a89774d885ba8349254d5c, type: 3}
   - {fileID: 4863570174819463809, guid: 44e11a47888884b43a32ca9a2e1b98d2, type: 3}
   - {fileID: 4262517259731844962, guid: af7b071e84789b54783c8218bc01b562, type: 3}
   - {fileID: 2132547664260878483, guid: ce410d09bdc26804fb1bf45d51c7a820, type: 3}
+  photonPickupPrefabPaths:
+  - PhotonPrefabs/Boosters_PUN/BoostDamage_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostDefence_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostHealth_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostShoot_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostSpeed_PUN
   spawnHeightOffset: 0.25
   dropPoint: {fileID: 0}
   enableDebugLogs: 0
@@ -387,6 +396,28 @@ MonoBehaviour:
   unloadTriggerList: 958ca0ea
   bankNameInternal: 
   valueGuidInternal: 
+--- !u!114 &4915335779002758075
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700983287944909798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 2
+  ObservedComponents: []
+  sceneViewId: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
 --- !u!1 &2460424317483716048
 GameObject:
   m_ObjectHideFlags: 0

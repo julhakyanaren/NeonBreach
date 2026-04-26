@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -39,11 +40,19 @@ public class PlayerRotation : MonoBehaviour
     [Tooltip("Fire point used to define the mouse aim plane height.")]
     [SerializeField] private Transform firePoint;
 
+    [Tooltip("Local input blocker for this player.")]
+    [SerializeField] private PlayerInputBlocker inputBlocker;
+
+    [Header("Networking")]
+    [SerializeField] private PhotonView photonView;
+
     public Vector3 CurrentAimPoint { get; private set; }
 
     private float baseRotationSpeed;
     private Vector2 lookInput;
     private Vector2 pointerScreenPosition;
+
+    private bool ownsRotationInput;
 
     private void Reset()
     {
@@ -51,13 +60,25 @@ public class PlayerRotation : MonoBehaviour
         {
             mainCamera = Camera.main;
         }
+
+        inputBlocker = GetComponent<PlayerInputBlocker>();
     }
 
     private void Awake()
     {
+        if (RuntimeOptions.MultiplayerMode && photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
         if (mainCamera == null)
         {
             mainCamera = Camera.main;
+        }
+
+        if (inputBlocker == null)
+        {
+            inputBlocker = GetComponent<PlayerInputBlocker>();
         }
 
         ApplyConfig();
@@ -78,43 +99,64 @@ public class PlayerRotation : MonoBehaviour
 
     private void OnEnable()
     {
-        if (lookAction != null)
+        ownsRotationInput = false;
+
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return;
+        }
+
+        if (lookAction != null && lookAction.action != null)
         {
             lookAction.action.Enable();
         }
 
-        if (pointerPositionAction != null)
+        if (pointerPositionAction != null && pointerPositionAction.action != null)
         {
             pointerPositionAction.action.Enable();
         }
 
-        if (rotateAction != null)
+        if (rotateAction != null && rotateAction.action != null)
         {
             rotateAction.action.Enable();
         }
+
+        ownsRotationInput = true;
     }
 
     private void OnDisable()
     {
-        if (lookAction != null)
+        if (ownsRotationInput == false)
+        {
+            return;
+        }
+
+        if (lookAction != null && lookAction.action != null)
         {
             lookAction.action.Disable();
         }
 
-        if (pointerPositionAction != null)
+        if (pointerPositionAction != null && pointerPositionAction.action != null)
         {
             pointerPositionAction.action.Disable();
         }
 
-        if (rotateAction != null)
+        if (rotateAction != null && rotateAction.action != null)
         {
             rotateAction.action.Disable();
         }
+
+        ownsRotationInput = false;
     }
 
     private void Update()
     {
-        if (RuntimeOptions.InputBlocked)
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return;
+        }
+
+        if (IsInputBlocked())
         {
             return;
         }
@@ -126,6 +168,21 @@ public class PlayerRotation : MonoBehaviour
         }
 
         RotateThirdPerson();
+    }
+
+    private bool IsInputBlocked()
+    {
+        if (inputBlocker != null && inputBlocker.IsBlocked)
+        {
+            return true;
+        }
+
+        if (RuntimeOptions.InputBlocked)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void RotateTopDown()
@@ -191,16 +248,6 @@ public class PlayerRotation : MonoBehaviour
 
         cameraForward.y = 0f;
         cameraRight.y = 0f;
-
-        if (cameraForward.sqrMagnitude <= 0.001f)
-        {
-            return;
-        }
-
-        if (cameraRight.sqrMagnitude <= 0.001f)
-        {
-            return;
-        }
 
         cameraForward.Normalize();
         cameraRight.Normalize();
@@ -269,16 +316,6 @@ public class PlayerRotation : MonoBehaviour
         cameraForward.y = 0f;
         cameraRight.y = 0f;
 
-        if (cameraForward.sqrMagnitude <= 0.001f)
-        {
-            return;
-        }
-
-        if (cameraRight.sqrMagnitude <= 0.001f)
-        {
-            return;
-        }
-
         cameraForward.Normalize();
         cameraRight.Normalize();
 
@@ -346,9 +383,7 @@ public class PlayerRotation : MonoBehaviour
 
         Plane aimPlane = new Plane(Vector3.up, new Vector3(0f, planeHeight, 0f));
 
-        float enter;
-
-        if (aimPlane.Raycast(ray, out enter) == false)
+        if (aimPlane.Raycast(ray, out float enter) == false)
         {
             return;
         }

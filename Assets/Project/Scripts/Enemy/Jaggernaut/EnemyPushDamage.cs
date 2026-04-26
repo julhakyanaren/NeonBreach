@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 
 public class EnemyPushDamage : MonoBehaviour
@@ -18,6 +19,14 @@ public class EnemyPushDamage : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+        }
+
         if (jaggernautController == null)
         {
             return;

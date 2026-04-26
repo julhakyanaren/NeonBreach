@@ -43,7 +43,10 @@ public class EnemyLineOfSightSensor : MonoBehaviour
     {
         if (raysOriginPosition == null || raysOriginPosition.Count == 0)
         {
-            Debug.LogWarning("No origins positions for raycast");
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("No origins positions for raycast");
+            }
         }
     }
 

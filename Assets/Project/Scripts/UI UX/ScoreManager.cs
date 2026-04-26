@@ -103,4 +103,31 @@ public class ScoreManager : MonoBehaviour
 
         return Mathf.RoundToInt(rawScore);
     }
+
+    public void ApplyScorePenaltyPercent(float percent)
+    {
+        if (percent <= 0f)
+        {
+            return;
+        }
+
+        if (percent > 100f)
+        {
+            percent = 100f;
+        }
+
+        float multiplier = 1f - percent / 100f;
+
+        currentScoreRaw *= multiplier;
+        currentScore = CalculateDisplayScore(currentScoreRaw);
+
+        OnScoreChanged?.Invoke(currentScore);
+
+        GameSessionStats stats = GameSessionStats.Instance;
+
+        if (stats != null)
+        {
+            stats.SetScore(currentScoreRaw);
+        }
+    }
 }

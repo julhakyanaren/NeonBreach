@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
@@ -6,10 +7,15 @@ public class EnemySpawner : MonoBehaviour
     [System.Serializable]
     public class EnemySpawnEntry
     {
-        [Header("Enemy")]
-        [Tooltip("Enemy prefab that can be spawned.")]
+        [Header("Singleplayer Enemy")]
+        [Tooltip("Enemy prefab used in singleplayer mode.")]
         public GameObject enemyPrefab;
 
+        [Header("Multiplayer Enemy")]
+        [Tooltip("Prefab name in Resources used by Photon room instantiation.")]
+        public string multiplayerPrefabName;
+
+        [Header("Spawn Weight")]
         [Tooltip("Relative weight used for random selection.")]
         [Min(0)]
         public int spawnWeight = 1;
@@ -21,32 +27,121 @@ public class EnemySpawner : MonoBehaviour
 
     public GameObject SpawnEnemyAtPosition(Vector3 spawnPosition, WaveScalingData scalingData, int waveIndex)
     {
-        GameObject enemyPrefab = GetRandomEnemyPrefab(waveIndex);
+        EnemySpawnEntry selectedEntry = GetRandomEnemyEntry(waveIndex);
 
-        if (enemyPrefab == null)
+        if (selectedEntry == null)
         {
-            Debug.LogWarning($"{name}: EnemySpawner could not resolve enemy prefab.");
+            if (RuntimeOptions.Logging)
+            {
+                Debug.LogWarning($"{name}: EnemySpawner could not resolve enemy entry.");
+            }
             return null;
         }
 
-        GameObject spawnedEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        GameObject spawnedEnemy = null;
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (!PhotonNetwork.InRoom)
+            {
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning($"{name}: MultiplayerMode is enabled but client is not in a Photon room.");
+                }
+                return null;
+            }
+
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning($"{name}: Only MasterClient can spawn room enemies.");
+                }
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(selectedEntry.multiplayerPrefabName))
+            {
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning($"{name}: Multiplayer prefab name is missing for enemy entry.");
+                }
+                return null;
+            }
+
+            spawnedEnemy = PhotonNetwork.InstantiateRoomObject(
+                selectedEntry.multiplayerPrefabName,
+                spawnPosition,
+                Quaternion.identity,
+                0,
+                new object[]
+                {
+                    waveIndex
+                });
+        }
+        else
+        {
+            if (selectedEntry.enemyPrefab == null)
+            {
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning($"{name}: Singleplayer enemy prefab is missing.");
+                }                
+                return null;
+            }
+
+            spawnedEnemy = Instantiate(selectedEntry.enemyPrefab, spawnPosition, Quaternion.identity);
+        }
+
+        if (spawnedEnemy == null)
+        {
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning($"{name}: EnemySpawner failed to spawn enemy.");
+            }
+            return null;
+        }
+
+        ApplyWaveIndex(spawnedEnemy, waveIndex);
+        ApplyWaveScaling(spawnedEnemy, scalingData);
+
+        return spawnedEnemy;
+    }
+
+    private void ApplyWaveIndex(GameObject spawnedEnemy, int waveIndex)
+    {
+        if (spawnedEnemy == null)
+        {
+            return;
+        }
 
         SaberwingController saberwing = spawnedEnemy.GetComponent<SaberwingController>();
+
         if (saberwing != null)
         {
             saberwing.SetWaveIndex(waveIndex);
         }
 
         JaggernautController jaggernaut = spawnedEnemy.GetComponent<JaggernautController>();
+
         if (jaggernaut != null)
         {
             jaggernaut.SetWaveIndex(waveIndex);
         }
 
         HotshotController hotshot = spawnedEnemy.GetComponent<HotshotController>();
+
         if (hotshot != null)
         {
             hotshot.SetWaveIndex(waveIndex);
+        }
+    }
+
+    private void ApplyWaveScaling(GameObject spawnedEnemy, WaveScalingData scalingData)
+    {
+        if (spawnedEnemy == null)
+        {
+            return;
         }
 
         IWaveScalable[] scalableComponents = spawnedEnemy.GetComponentsInChildren<IWaveScalable>();
@@ -62,11 +157,9 @@ public class EnemySpawner : MonoBehaviour
 
             scalable.ApplyWaveScaling(scalingData);
         }
-
-        return spawnedEnemy;
     }
 
-    private GameObject GetRandomEnemyPrefab(int waveIndex)
+    private EnemySpawnEntry GetRandomEnemyEntry(int waveIndex)
     {
         if (enemyEntries == null || enemyEntries.Count == 0)
         {
@@ -79,17 +172,7 @@ public class EnemySpawner : MonoBehaviour
         {
             EnemySpawnEntry entry = enemyEntries[i];
 
-            if (entry == null)
-            {
-                continue;
-            }
-
-            if (entry.enemyPrefab == null)
-            {
-                continue;
-            }
-
-            if (entry.spawnWeight <= 0)
+            if (!IsEntryValid(entry))
             {
                 continue;
             }
@@ -110,17 +193,7 @@ public class EnemySpawner : MonoBehaviour
         {
             EnemySpawnEntry entry = enemyEntries[i];
 
-            if (entry == null)
-            {
-                continue;
-            }
-
-            if (entry.enemyPrefab == null)
-            {
-                continue;
-            }
-
-            if (entry.spawnWeight <= 0)
+            if (!IsEntryValid(entry))
             {
                 continue;
             }
@@ -130,11 +203,41 @@ public class EnemySpawner : MonoBehaviour
 
             if (randomValue < currentWeight)
             {
-                return entry.enemyPrefab;
+                return entry;
             }
         }
 
         return null;
+    }
+
+    private bool IsEntryValid(EnemySpawnEntry entry)
+    {
+        if (entry == null)
+        {
+            return false;
+        }
+
+        if (entry.spawnWeight <= 0)
+        {
+            return false;
+        }
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (string.IsNullOrWhiteSpace(entry.multiplayerPrefabName))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        if (entry.enemyPrefab == null)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private int GetScaledWeight(EnemySpawnEntry entry, int waveIndex)
@@ -145,7 +248,7 @@ public class EnemySpawner : MonoBehaviour
         }
 
         int scaledWeight = entry.spawnWeight;
-        string enemyName = entry.enemyPrefab.name;
+        string enemyName = GetEnemyName(entry);
 
         if (enemyName.Contains("Saberwing"))
         {
@@ -161,5 +264,28 @@ public class EnemySpawner : MonoBehaviour
         }
 
         return Mathf.Max(1, scaledWeight);
+    }
+
+    private string GetEnemyName(EnemySpawnEntry entry)
+    {
+        if (entry == null)
+        {
+            return string.Empty;
+        }
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (!string.IsNullOrWhiteSpace(entry.multiplayerPrefabName))
+            {
+                return entry.multiplayerPrefabName;
+            }
+        }
+
+        if (entry.enemyPrefab != null)
+        {
+            return entry.enemyPrefab.name;
+        }
+
+        return string.Empty;
     }
 }

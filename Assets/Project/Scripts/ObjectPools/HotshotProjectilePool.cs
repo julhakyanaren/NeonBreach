@@ -59,7 +59,10 @@ public class HotshotProjectilePool : MonoBehaviour, IProjectilePool
     {
         if (objectPrefab == null)
         {
-            Debug.LogError("HotshotProjectilePool: Object Prefab is not assigned.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("HotshotProjectilePool: Object Prefab is not assigned.", this);
+            }
             return;
         }
 

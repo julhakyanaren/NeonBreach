@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(SaberwingDestroy))]
@@ -42,6 +43,9 @@ public class SaberwingHealth : MonoBehaviour, IDamageable, IWaveScalable
 
     [Tooltip("Reference to the EnemyDeathNotifier.")]
     [SerializeField] private EnemyDeathNotifier deathNotifier;
+
+    [Tooltip("PhotonView reference for multiplayer death sync.")]
+    [SerializeField] private PhotonView photonView;
 
     private bool isDead;
 
@@ -95,6 +99,29 @@ public class SaberwingHealth : MonoBehaviour, IDamageable, IWaveScalable
         }
     }
 
+    private void Reset()
+    {
+        if (saberwingDestroy == null)
+        {
+            saberwingDestroy = GetComponent<SaberwingDestroy>();
+        }
+
+        if (deathNotifier == null)
+        {
+            deathNotifier = GetComponent<EnemyDeathNotifier>();
+        }
+
+        if (saberwingController == null)
+        {
+            saberwingController = GetComponent<SaberwingController>();
+        }
+
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+    }
+
     private void Awake()
     {
         if (saberwingDestroy == null)
@@ -110,6 +137,11 @@ public class SaberwingHealth : MonoBehaviour, IDamageable, IWaveScalable
         if (saberwingController == null)
         {
             saberwingController = GetComponent<SaberwingController>();
+        }
+
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
         }
 
         ApplyConfig();
@@ -228,6 +260,52 @@ public class SaberwingHealth : MonoBehaviour, IDamageable, IWaveScalable
             return;
         }
 
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView == null)
+            {
+                ExecuteDeathSequence();
+                return;
+            }
+
+            photonView.RPC(
+                nameof(Die_RPC),
+                RpcTarget.All,
+                debugDamage,
+                saberwingController.CurrentWaveIndex
+            );
+
+            return;
+        }
+
+        ExecuteDeathSequence();
+    }
+
+    [PunRPC]
+    private void Die_RPC(bool rpcDebugDamage, int rpcWaveIndex)
+    {
+        ExecuteDeathSequence(rpcDebugDamage, rpcWaveIndex);
+    }
+
+    private void ExecuteDeathSequence()
+    {
+        int waveIndex = 0;
+
+        if (saberwingController != null)
+        {
+            waveIndex = saberwingController.CurrentWaveIndex;
+        }
+
+        ExecuteDeathSequence(debugDamage, waveIndex);
+    }
+
+    private void ExecuteDeathSequence(bool deathDebugLog, int waveIndex)
+    {
+        if (IsDead)
+        {
+            return;
+        }
+
         IsDead = true;
 
         if (saberwingController != null)
@@ -242,7 +320,7 @@ public class SaberwingHealth : MonoBehaviour, IDamageable, IWaveScalable
 
         if (saberwingDestroy != null)
         {
-            saberwingDestroy.StartDestroy(debugDamage, saberwingController.CurrentWaveIndex);
+            saberwingDestroy.StartDestroy(deathDebugLog, waveIndex);
         }
     }
 }

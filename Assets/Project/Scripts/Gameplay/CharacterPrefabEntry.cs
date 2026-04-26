@@ -4,12 +4,16 @@ using UnityEngine;
 public class CharacterPrefabEntry
 {
     [Header("Character")]
-    [Tooltip("Character type selected in MainMenu and stored in RuntimeOptions.")]
+    [Tooltip("Character type for this prefab entry.")]
     [SerializeField] private CharacterType characterType;
 
-    [Header("Prefab")]
-    [Tooltip("Player prefab that should be spawned for this character.")]
-    [SerializeField] private GameObject playerPrefab;
+    [Header("Singleplayer")]
+    [Tooltip("Local prefab used for singleplayer spawn.")]
+    [SerializeField] private GameObject singleplayerPrefab;
+
+    [Header("Multiplayer")]
+    [Tooltip("Photon prefab name from Resources used for multiplayer spawn.")]
+    [SerializeField] private string multiplayerPrefabName;
 
     public CharacterType CharacterType
     {
@@ -19,11 +23,19 @@ public class CharacterPrefabEntry
         }
     }
 
-    public GameObject PlayerPrefab
+    public GameObject SingleplayerPrefab
     {
         get
         {
-            return playerPrefab;
+            return singleplayerPrefab;
+        }
+    }
+
+    public string MultiplayerPrefabName
+    {
+        get
+        {
+            return multiplayerPrefabName;
         }
     }
 }

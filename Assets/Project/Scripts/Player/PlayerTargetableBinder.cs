@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent (typeof(PlayerHealth))]
+[RequireComponent(typeof(PlayerHealth))]
 public class PlayerTargetableBinder : MonoBehaviour
 {
     [Header("References")]
@@ -33,6 +33,11 @@ public class PlayerTargetableBinder : MonoBehaviour
         GameCanvasController.SpawnStarted += HandleSpawnStarted;
         GameCanvasController.SpawnCompleted += HandleSpawnCompleted;
         PlayerHealth.PlayerDied += HandlePlayerDied;
+
+        if (GameCanvasController.IsSpawnCompleted)
+        {
+            HandleSpawnCompleted();
+        }
     }
 
     private void OnDisable()

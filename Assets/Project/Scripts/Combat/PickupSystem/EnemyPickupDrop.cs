@@ -1,3 +1,4 @@
+using Photon.Pun;
 using UnityEngine;
 
 public class EnemyPickupDrop : MonoBehaviour
@@ -15,9 +16,21 @@ public class EnemyPickupDrop : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float maxDropChance = 0.5f;
 
-    [Header("Pickup Pool")]
-    [Tooltip("Available pickup prefabs that can be spawned after enemy death.")]
+    [Header("Singleplayer Pickup Pool")]
+    [Tooltip("Available pickup prefabs that can be spawned after enemy death in singleplayer.")]
     [SerializeField] private GameObject[] pickupPrefabs;
+
+    [Header("Multiplayer Pickup Pool")]
+    [Tooltip("Resources paths for pickup prefabs spawned through Photon in multiplayer.")]
+    [SerializeField]
+    private string[] photonPickupPrefabPaths =
+    {
+        "PhotonPrefabs/Boosters_PUN/BoostDamage_PUN",
+        "PhotonPrefabs/Boosters_PUN/BoostDefence_PUN",
+        "PhotonPrefabs/Boosters_PUN/BoostHealth_PUN",
+        "PhotonPrefabs/Boosters_PUN/BoostShoot_PUN",
+        "PhotonPrefabs/Boosters_PUN/BoostSpeed_PUN"
+    };
 
     [Header("Spawn Settings")]
     [Tooltip("Vertical offset used when spawning the pickup so it does not intersect the ground.")]
@@ -36,51 +49,34 @@ public class EnemyPickupDrop : MonoBehaviour
     {
         if (dropWasProcessed)
         {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning($"{name}: Pickup drop was already processed.");
-            }
-
             return;
         }
 
         dropWasProcessed = true;
 
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            TryDropMultiplayer(waveIndex);
+            return;
+        }
+
+        TryDropSingleplayer(waveIndex);
+    }
+
+    private void TryDropSingleplayer(int waveIndex)
+    {
         if (pickupPrefabs == null)
         {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning($"{name}: Pickup prefabs array is null.");
-            }
-
             return;
         }
 
         if (pickupPrefabs.Length == 0)
         {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning($"{name}: Pickup prefabs array is empty.");
-            }
-
             return;
         }
 
-        float currentDropChance = CalculateDropChance(waveIndex);
-        float randomValue = Random.value;
-
-        if (enableDebugLogs)
+        if (!RollDrop(waveIndex))
         {
-            Debug.Log($"{name}: Wave = {waveIndex}, DropChance = {currentDropChance:F2}, Roll = {randomValue:F2}");
-        }
-
-        if (randomValue > currentDropChance)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"{name}: Pickup drop failed.");
-            }
-
             return;
         }
 
@@ -88,21 +84,74 @@ public class EnemyPickupDrop : MonoBehaviour
 
         if (selectedPickupPrefab == null)
         {
-            if (enableDebugLogs)
-            {
-                Debug.LogWarning($"{name}: Selected pickup prefab is null.");
-            }
-
             return;
         }
 
         Vector3 spawnPosition = GetSpawnPosition();
         Instantiate(selectedPickupPrefab, spawnPosition, Quaternion.identity);
+    }
+
+    private void TryDropMultiplayer(int waveIndex)
+    {
+        if (!PhotonNetwork.InRoom)
+        {
+            return;
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        if (photonPickupPrefabPaths == null)
+        {
+            return;
+        }
+
+        if (photonPickupPrefabPaths.Length == 0)
+        {
+            return;
+        }
+
+        if (!RollDrop(waveIndex))
+        {
+            return;
+        }
+
+        string selectedPath = GetRandomPhotonPickupPath();
+
+        if (string.IsNullOrWhiteSpace(selectedPath))
+        {
+            return;
+        }
+
+        Vector3 spawnPosition = GetSpawnPosition();
+
+        PhotonNetwork.InstantiateRoomObject(
+            selectedPath,
+            spawnPosition,
+            Quaternion.identity);
+    }
+
+    private bool RollDrop(int waveIndex)
+    {
+        float currentDropChance = CalculateDropChance(waveIndex);
+        float randomValue = Random.value;
 
         if (enableDebugLogs)
         {
-            Debug.Log($"{name}: Spawned pickup {selectedPickupPrefab.name} at {spawnPosition}.");
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log(name + ": Wave = " + waveIndex + ", DropChance = " + currentDropChance.ToString("F2") + ", Roll = " + randomValue.ToString("F2"));
+            }
         }
+
+        if (randomValue > currentDropChance)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private float CalculateDropChance(int waveIndex)
@@ -126,6 +175,14 @@ public class EnemyPickupDrop : MonoBehaviour
         GameObject selectedPickupPrefab = pickupPrefabs[randomIndex];
 
         return selectedPickupPrefab;
+    }
+
+    private string GetRandomPhotonPickupPath()
+    {
+        int randomIndex = Random.Range(0, photonPickupPrefabPaths.Length);
+        string selectedPath = photonPickupPrefabPaths[randomIndex];
+
+        return selectedPath;
     }
 
     private Vector3 GetSpawnPosition()

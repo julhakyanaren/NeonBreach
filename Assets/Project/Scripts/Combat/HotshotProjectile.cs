@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(WwiseGameplaySFXController))]
-public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
+[RequireComponent(typeof(PhotonView))]
+public class HotshotProjectile : MonoBehaviour, IEnemyProjectile, IPunInstantiateMagicCallback
 {
     [Header("Config Source")]
     [Tooltip("Projectile config with base stats.")]
@@ -19,7 +21,7 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
     [SerializeField] private float damage = 10f;
 
     [Header("Lifetime Settings")]
-    [Tooltip("How long the projectile exists before being returned to the pool.")]
+    [Tooltip("How long the projectile exists before being returned to the pool or destroyed in multiplayer.")]
     [Range(0.5f, 10f)]
     [SerializeField] private float lifeTime = 3f;
 
@@ -40,20 +42,21 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
     }
 
     [Header("VFX Settings")]
-    [Tooltip("Offset applied to impact VFX along hit direction, when hit not an player")]
+    [Tooltip("Offset applied to impact VFX along hit direction when hitting a player.")]
     [Range(0f, 0.5f)]
     [SerializeField] private float impactOffsetPlayer = 0.05f;
 
-    [Tooltip("Offset applied to impact VFX along hit direction, when hit player")]
+    [Tooltip("Offset applied to impact VFX along hit direction when hitting arena or obstacles.")]
     [Range(0f, 0.5f)]
     [SerializeField] private float impactOffsetArena = 0.05f;
 
-    [Tooltip("All mapped impact VFX prefabs.")]
+    [Tooltip("All mapped impact VFX prefabs for singleplayer.")]
     [SerializeField] private List<ImpactVfxEntry> impactVfxEntries = new List<ImpactVfxEntry>();
 
     [Tooltip("Current impact VFX type used by this projectile.")]
     [SerializeField] private ImpactVFXType impactVfxType = ImpactVFXType.HotshotBullet;
 
+    [Header("Trail")]
     [Tooltip("Has projectile trail renderer.")]
     [SerializeField] private bool hasTrail;
 
@@ -67,6 +70,7 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
     [Tooltip("Reference of the WwiseGameplaySFXController script.")]
     [SerializeField] private WwiseGameplaySFXController gameplaySfxController;
 
+    private PhotonView photonView;
     private Vector3 moveDirection;
     private float currentLifeTimer;
     private Dictionary<ImpactVFXType, GameObject> impactVfxMap;
@@ -111,10 +115,13 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
     {
         projectileRigidbody = GetComponent<Rigidbody>();
         gameplaySfxController = GetComponent<WwiseGameplaySFXController>();
+        photonView = GetComponent<PhotonView>();
     }
 
     private void Awake()
     {
+        photonView = GetComponent<PhotonView>();
+
         if (projectileRigidbody == null)
         {
             projectileRigidbody = GetComponent<Rigidbody>();
@@ -127,7 +134,11 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
 
         if (hasTrail && trailRenderer == null)
         {
-            Debug.LogError("HotshotProjectile: trail renderer is missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("HotshotProjectile: trail renderer is missing.", this);
+            }
+
             return;
         }
 
@@ -140,6 +151,8 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
     {
         currentLifeTimer = LifeTime;
 
+        ClearTrail();
+
         if (projectileRigidbody == null)
         {
             return;
@@ -147,7 +160,11 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
 
         projectileRigidbody.velocity = Vector3.zero;
         projectileRigidbody.angularVelocity = Vector3.zero;
-        projectileRigidbody.velocity = moveDirection * Speed;
+
+        if (moveDirection.sqrMagnitude > 0.001f)
+        {
+            projectileRigidbody.velocity = moveDirection * Speed;
+        }
     }
 
     private void Update()
@@ -167,6 +184,8 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
             projectileRigidbody.velocity = Vector3.zero;
             projectileRigidbody.angularVelocity = Vector3.zero;
         }
+
+        ClearTrail();
     }
 
     private void BuildImpactVfxMap()
@@ -179,7 +198,11 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
 
             if (entry.impactVfxPrefab == null)
             {
-                Debug.LogWarning("HotshotProjectile: Missing impact VFX prefab for " + entry.impactVfxType, this);
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning("HotshotProjectile: Missing impact VFX prefab for " + entry.impactVfxType, this);
+                }
+
                 continue;
             }
 
@@ -189,7 +212,10 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
             }
             else
             {
-                Debug.LogWarning("HotshotProjectile: Duplicate impact VFX mapping for " + entry.impactVfxType, this);
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning("HotshotProjectile: Duplicate impact VFX mapping for " + entry.impactVfxType, this);
+                }
             }
         }
     }
@@ -226,10 +252,7 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
 
     public void Launch(Vector3 direction)
     {
-        if (hasTrail)
-        {
-            trailRenderer.Clear();
-        }
+        ClearTrail();
 
         moveDirection = direction.normalized;
 
@@ -246,6 +269,21 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
         }
     }
 
+    private void ClearTrail()
+    {
+        if (!hasTrail)
+        {
+            return;
+        }
+
+        if (trailRenderer == null)
+        {
+            return;
+        }
+
+        trailRenderer.Clear();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.isTrigger)
@@ -253,30 +291,131 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
             return;
         }
 
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+        }
+
         Vector3 impactForward = -transform.forward;
         Vector3 impactPosition = transform.position + impactForward * impactOffsetArena;
 
         if (other.CompareTag("Player"))
         {
-            IDamageable damageable = other.GetComponentInParent<IDamageable>();
-
-            if (damageable != null)
-            {
-                damageable.ApplyDamage(Damage);
-            }
+            TryApplyDamageMultiplayerSafe(other);
+            impactPosition = transform.position + impactForward * impactOffsetPlayer;
         }
 
-        if (gameplaySfxController != null)
-        {
-            gameplaySfxController.PlayRandomHit(gameObject);
-        }
-
-        impactPosition = transform.position + impactForward * impactOffsetPlayer;
+        PlayImpactSfx();
         SpawnImpactVfx(impactPosition, impactForward);
         DisableProjectile();
     }
 
+    private void TryApplyDamageMultiplayerSafe(Collider other)
+    {
+        if (PhotonNetwork.InRoom == true)
+        {
+            PhotonView targetPhotonView = other.GetComponentInParent<PhotonView>();
+
+            if (targetPhotonView == null)
+            {
+                return;
+            }
+
+            if (photonView == null)
+            {
+                return;
+            }
+
+            photonView.RPC(
+                nameof(RPC_ApplyDamage),
+                RpcTarget.All,
+                targetPhotonView.ViewID,
+                Damage);
+
+            return;
+        }
+
+        IDamageable damageable = other.GetComponentInParent<IDamageable>();
+
+        if (damageable == null)
+        {
+            return;
+        }
+
+        damageable.ApplyDamage(Damage);
+    }
+
+    [PunRPC]
+    private void RPC_ApplyDamage(int targetViewId, float damageValue)
+    {
+        PhotonView targetPhotonView = PhotonView.Find(targetViewId);
+
+        if (targetPhotonView == null)
+        {
+            return;
+        }
+
+        if (!targetPhotonView.IsMine)
+        {
+            return;
+        }
+
+        IDamageable damageable = targetPhotonView.GetComponent<IDamageable>();
+
+        if (damageable == null)
+        {
+            damageable = targetPhotonView.GetComponentInChildren<IDamageable>();
+        }
+
+        if (damageable == null)
+        {
+            damageable = targetPhotonView.GetComponentInParent<IDamageable>();
+        }
+
+        if (damageable == null)
+        {
+            return;
+        }
+
+        damageable.ApplyDamage(damageValue);
+    }
+
     private void SpawnImpactVfx(Vector3 position, Vector3 forwardDirection)
+    {
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (photonView == null)
+            {
+                return;
+            }
+
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+
+            photonView.RPC(
+                nameof(RPC_SpawnImpactVfx),
+                RpcTarget.All,
+                position,
+                forwardDirection);
+
+            return;
+        }
+
+        SpawnImpactVfxInternal(position, forwardDirection);
+    }
+
+    [PunRPC]
+    private void RPC_SpawnImpactVfx(Vector3 position, Vector3 forwardDirection)
+    {
+        SpawnImpactVfxInternal(position, forwardDirection);
+    }
+
+    private void SpawnImpactVfxInternal(Vector3 position, Vector3 forwardDirection)
     {
         if (impactVfxMap == null || impactVfxMap.Count == 0)
         {
@@ -287,7 +426,11 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
 
         if (!impactVfxMap.TryGetValue(impactVfxType, out impactPrefab))
         {
-            Debug.LogWarning("HotshotProjectile: No impact VFX mapped for " + impactVfxType, this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("HotshotProjectile: No impact VFX mapped for " + impactVfxType, this);
+            }
+
             return;
         }
 
@@ -300,13 +443,52 @@ public class HotshotProjectile : MonoBehaviour, IEnemyProjectile
         Instantiate(impactPrefab, position, impactRotation);
     }
 
+    private void PlayImpactSfx()
+    {
+        if (gameplaySfxController == null)
+        {
+            return;
+        }
+
+        gameplaySfxController.PlayRandomHit(gameObject);
+    }
+
     public void DisableProjectile()
     {
-        gameObject.SetActive(false);
-
-        if (hasTrail)
+        if (PhotonNetwork.InRoom == true)
         {
-            trailRenderer.Clear();
+            if (PhotonNetwork.IsMasterClient == true)
+            {
+                PhotonNetwork.Destroy(gameObject);
+            }
+
+            return;
         }
+
+        gameObject.SetActive(false);
+        ClearTrail();
+    }
+
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        object[] data = info.photonView.InstantiationData;
+
+        if (data == null)
+        {
+            return;
+        }
+
+        if (data.Length < 1)
+        {
+            return;
+        }
+
+        Vector3 direction = (Vector3)data[0];
+        Launch(direction);
     }
 }

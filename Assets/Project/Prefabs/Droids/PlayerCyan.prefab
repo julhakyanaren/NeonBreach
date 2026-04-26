@@ -299,6 +299,7 @@ GameObject:
   - component: {fileID: 1745337049}
   - component: {fileID: 1707560655}
   - component: {fileID: 1707560666}
+  - component: {fileID: 2457392321551370228}
   m_Layer: 6
   m_Name: PlayerCyan
   m_TagString: Player
@@ -378,6 +379,7 @@ MonoBehaviour:
   maxHealth: 200
   maxHealthLimit: 1000
   damageMultiplier: 1
+  photonView: {fileID: 0}
   logChanges: 1
   makeInvincible: 0
 --- !u!114 &935275006
@@ -410,6 +412,8 @@ MonoBehaviour:
   playerRigidbody: {fileID: 935275007}
   playerCapsuleCollider: {fileID: 3059393593666588406}
   characterAnimator: {fileID: 3059393593897093179}
+  inputBlocker: {fileID: 0}
+  photonView: {fileID: 0}
 --- !u!114 &3059393593897093180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -441,12 +445,19 @@ MonoBehaviour:
   - muzzleVfxType: 0
     muzzleVfxPrefab: {fileID: 6451788359692505047, guid: b34659be356fc6d4fb18b942d038a091,
       type: 3}
+  - muzzleVfxType: 2
+    muzzleVfxPrefab: {fileID: 6451788359692505047, guid: b5cdffedbe82058449c414b0b04b10e4,
+      type: 3}
   muzzleVfxType: 0
   muzzleOffset: 0.05
+  isBoostedProjectileTrailActive: 0
   projectilePool: {fileID: 5102179437869375488}
   playerRotation: {fileID: 3059393593897093181}
   weaponAnimator: {fileID: 3059393594239075009}
   playerSfxController: {fileID: 1745337048}
+  inputBlocker: {fileID: 0}
+  photonView: {fileID: 0}
+  multiplayerProjectileResourcePath: PhotonPrefabs/Projectiles_PUN/CyanProjectile_PUN
   isDead: 0
 --- !u!114 &3059393593897093181
 MonoBehaviour:
@@ -472,6 +483,8 @@ MonoBehaviour:
   pointerPositionAction: {fileID: 4913675573344473775, guid: 62ac8c77f5d1d8544b2bb25339663254,
     type: 3}
   firePoint: {fileID: 3059393594899679763}
+  inputBlocker: {fileID: 0}
+  photonView: {fileID: 0}
 --- !u!114 &1282020877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -642,6 +655,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scoreManager: {fileID: 0}
+--- !u!114 &2457392321551370228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3059393593897093177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d65530bf7942e4408867181839cc0e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputBlocked: 0
 --- !u!1 &3059393594075156282
 GameObject:
   m_ObjectHideFlags: 0

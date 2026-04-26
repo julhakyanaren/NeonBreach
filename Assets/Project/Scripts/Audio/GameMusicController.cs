@@ -49,33 +49,49 @@ public class GameMusicController : MonoBehaviour
 
     private bool ValidateReferences()
     {
+        bool loggingError = RuntimeOptions.LoggingError;
         if (musicSourceObject == null)
         {
-            Debug.LogError("GameMusicController: musicSourceObject is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameMusicController: musicSourceObject is missing.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(playMusicEvent))
         {
-            Debug.LogError("GameMusicController: playMusicEvent is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameMusicController: playMusicEvent is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(stopMusicEvent))
         {
-            Debug.LogError("GameMusicController: stopMusicEvent is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameMusicController: stopMusicEvent is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(pauseMusicEvent))
         {
-            Debug.LogError("GameMusicController: pauseMusicEvent is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameMusicController: pauseMusicEvent is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(resumeMusicEvent))
         {
-            Debug.LogError("GameMusicController: resumeMusicEvent is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameMusicController: resumeMusicEvent is empty.", this);
+            }
             return false;
         }
 

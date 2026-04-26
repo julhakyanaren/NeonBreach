@@ -58,7 +58,10 @@ public class CyanPlayerDestroy : MonoBehaviour
         playerRB = GetComponent<Rigidbody>();
         if (playerRB == null)
         {
-            Debug.LogError("Player rigidbody missing");
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("Player rigidbody missing");
+            }
             return;
         }
     }
