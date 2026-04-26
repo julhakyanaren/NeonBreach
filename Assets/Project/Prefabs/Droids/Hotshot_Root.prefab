@@ -138,6 +138,7 @@ GameObject:
   - component: {fileID: 1159918019707999462}
   - component: {fileID: 733865201}
   - component: {fileID: 733865202}
+  - component: {fileID: 6952365542903455263}
   m_Layer: 7
   m_Name: Hotshot_Root
   m_TagString: Enemy
@@ -198,7 +199,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 80
+  m_Constraints: 84
   m_CollisionDetection: 0
 --- !u!136 &2011607765186441427
 CapsuleCollider:
@@ -266,6 +267,7 @@ MonoBehaviour:
   aimTolerance: 1.5
   idlePitchAngle: 0
   resetPitchWhenCannotAttack: 1
+  aimSyncAngleThreshold: 0.25
   projectileDamageMultiplier: 1
   enemyRigidbody: {fileID: 2011607765186441518}
   rootAnimator: {fileID: 2011607765186441519}
@@ -301,6 +303,8 @@ MonoBehaviour:
   reloadDuration: 5
   projectilePool: {fileID: 0}
   firePoint: {fileID: 6678797552737732082}
+  photonProjectilePrefabPath: PhotonPrefabs/Projectiles_PUN/HotshotProjectile_PUN
+  spawnPhotonMuzzleVfx: 1
   muzzleVfxEntries:
   - muzzleVfxType: 2
     muzzleVfxPrefab: {fileID: 6121156625607764855, guid: b35c0b582757a9b40976bd6ac2b8ba76,
@@ -423,15 +427,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f508f08461b1b14185b2654e60f6aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseDropChance: 0.1
-  dropChancePerWave: 0.02
-  maxDropChance: 0.5
+  baseDropChance: 0.2
+  dropChancePerWave: 0.05
+  maxDropChance: 0.8
   pickupPrefabs:
   - {fileID: 2418902139566094890, guid: 21b31d0c0c4d26243a3d33657698cf79, type: 3}
   - {fileID: 4651156193632940941, guid: bbb1860f03a89774d885ba8349254d5c, type: 3}
   - {fileID: 4863570174819463809, guid: 44e11a47888884b43a32ca9a2e1b98d2, type: 3}
   - {fileID: 4262517259731844962, guid: af7b071e84789b54783c8218bc01b562, type: 3}
   - {fileID: 2132547664260878483, guid: ce410d09bdc26804fb1bf45d51c7a820, type: 3}
+  photonPickupPrefabPaths:
+  - PhotonPrefabs/Boosters_PUN/BoostDamage_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostDefence_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostHealth_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostShoot_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostSpeed_PUN
   spawnHeightOffset: 0.25
   dropPoint: {fileID: 0}
   enableDebugLogs: 0
@@ -554,6 +564,28 @@ MonoBehaviour:
   scalingFactor: 1
   m_posOffsetData: {fileID: 0}
   listenerMask: 1
+--- !u!114 &6952365542903455263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2011607765186441513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 2
+  ObservedComponents: []
+  sceneViewId: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
 --- !u!1 &2011607765243576992
 GameObject:
   m_ObjectHideFlags: 0

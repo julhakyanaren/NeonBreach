@@ -1,8 +1,10 @@
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(JaggernautController))]
 [RequireComponent(typeof(JaggernautDestroy))]
 [RequireComponent(typeof(EnemyDeathNotifier))]
+[RequireComponent(typeof(PhotonView))]
 public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
 {
     [Header("Config Source")]
@@ -46,26 +48,18 @@ public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
     [Tooltip("Reference to the EnemyDeathNotifier.")]
     [SerializeField] private EnemyDeathNotifier deathNotifier;
 
+    private PhotonView photonView;
     private bool isDead;
 
     public bool IsDead
     {
-        get
-        {
-            return isDead;
-        }
-        private set
-        {
-            isDead = value;
-        }
+        get { return isDead; }
+        private set { isDead = value; }
     }
 
     public float MaxHealth
     {
-        get
-        {
-            return maxHealth;
-        }
+        get { return maxHealth; }
         private set
         {
             if (value <= 0f)
@@ -81,10 +75,7 @@ public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
 
     public float CurrentHealth
     {
-        get
-        {
-            return currentHealth;
-        }
+        get { return currentHealth; }
         private set
         {
             if (value < 0f)
@@ -137,6 +128,8 @@ public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
 
     private void Awake()
     {
+        photonView = GetComponent<PhotonView>();
+
         ApplyConfig();
 
         if (jaggernautController == null)
@@ -192,13 +185,32 @@ public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
 
         if (debugDamage)
         {
-            Debug.Log($"{gameObject.name} took {damageToApply} damage. HP: {CurrentHealth}/{MaxHealth}");
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log($"{gameObject.name} took {damageToApply} damage. HP: {CurrentHealth}/{MaxHealth}");
+            }
+            
         }
 
-        if (CurrentHealth <= 0f)
+        if (CurrentHealth > 0f)
         {
-            Die();
+            return;
         }
+
+        CurrentHealth = 0f;
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+
+            photonView.RPC(nameof(RPC_Die), RpcTarget.All);
+            return;
+        }
+
+        DieLocal();
     }
 
     private void TryAwardScore(float damageDealt, GameObject damageDealer)
@@ -243,13 +255,19 @@ public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
         return (damageDealt / MaxHealth) * finalScoreReward * rewardMultiplier * waveScoreMultiplier;
     }
 
-    public void Die()
+    [PunRPC]
+    private void RPC_Die()
     {
         if (IsDead)
         {
             return;
         }
 
+        DieLocal();
+    }
+
+    private void DieLocal()
+    {
         IsDead = true;
 
         if (jaggernautController != null)
@@ -289,5 +307,26 @@ public class JaggernautHealth : MonoBehaviour, IDamageable, IWaveScalable
         healthMultiplier = scalingData.HealthMultiplier;
         waveScoreMultiplier = scalingData.ScoreMultiplier;
         RebuildRuntimeHealth();
+    }
+
+    public void Die()
+    {
+        if (IsDead)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+
+            photonView.RPC(nameof(RPC_Die), RpcTarget.All);
+            return;
+        }
+
+        DieLocal();
     }
 }

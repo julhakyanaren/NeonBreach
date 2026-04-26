@@ -1,7 +1,9 @@
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
+[RequireComponent(typeof(PhotonView))]
+public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable, IPunInstantiateMagicCallback
 {
     [Header("Config source")]
     [Tooltip("Hotshot config with controller settings.")]
@@ -49,6 +51,10 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
     [Tooltip("If enabled, weapon pitch returns to idle when Hotshot cannot attack.")]
     [SerializeField] private bool resetPitchWhenCannotAttack = true;
 
+    [Header("Network Sync")]
+    [Tooltip("Minimum angle difference required before sending aim pitch sync RPC.")]
+    [SerializeField] private float aimSyncAngleThreshold = 0.25f;
+
     [Header("Wave Scaling")]
     [Tooltip("Runtime projectile damage multiplier applied from the current wave.")]
     [SerializeField] private float projectileDamageMultiplier = 1f;
@@ -88,6 +94,8 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
     [Tooltip("Draw attack max distance.")]
     [SerializeField] private bool drawAttackMaxDistance = true;
 
+    private PhotonView photonView;
+
     private Transform currentTarget;
     private Vector3 currentMoveDirection;
     private float nextTargetRefreshTime;
@@ -97,6 +105,11 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
     private bool hasAimSolution;
     private float targetAimAngle;
     private Transform cachedAimTarget;
+
+    private bool syncedHasTarget;
+    private bool previousHasTarget;
+    private bool hasSentAimSync;
+    private float previousSyncedAimAngle;
 
     private enum HotshotState
     {
@@ -110,62 +123,35 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
     public float MoveSpeed
     {
-        get
-        {
-            return moveSpeed;
-        }
-        set
-        {
-            moveSpeed = Mathf.Max(0.1f, value);
-        }
+        get { return moveSpeed; }
+        set { moveSpeed = Mathf.Max(0.1f, value); }
     }
 
     public int CurrentWaveIndex
     {
-        get
-        {
-            return currentWaveIndex;
-        }
+        get { return currentWaveIndex; }
     }
 
     public float RotationSpeed
     {
-        get
-        {
-            return rotationSpeed;
-        }
-        set
-        {
-            rotationSpeed = Mathf.Max(0.1f, value);
-        }
+        get { return rotationSpeed; }
+        set { rotationSpeed = Mathf.Max(0.1f, value); }
     }
 
     public float DetectionRadius
     {
-        get
-        {
-            return detectionRadius;
-        }
-        set
-        {
-            detectionRadius = Mathf.Max(0.1f, value);
-        }
+        get { return detectionRadius; }
+        set { detectionRadius = Mathf.Max(0.1f, value); }
     }
 
     public float MaxAttackDistance
     {
-        get
-        {
-            return maxAttackDistance;
-        }
+        get { return maxAttackDistance; }
     }
 
     public float MinAttackDistance
     {
-        get
-        {
-            return minAttackDistance;
-        }
+        get { return minAttackDistance; }
     }
 
     public float GetProjectileDamageMultiplier()
@@ -185,10 +171,13 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
         hotshotShooter = GetComponent<HotshotShooter>();
         movementSensor = GetComponent<EnemyMovementSensor>();
         aimSensor = GetComponent<HotshotAimSensor>();
+        photonView = GetComponent<PhotonView>();
     }
 
     private void Awake()
     {
+        photonView = GetComponent<PhotonView>();
+
         if (enemyRigidbody == null)
         {
             enemyRigidbody = GetComponent<Rigidbody>();
@@ -214,6 +203,7 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
             aimSensor = GetComponent<HotshotAimSensor>();
         }
 
+        ConfigureRigidbody();
         ApplyConfig();
 
         MoveSpeed = moveSpeed;
@@ -225,6 +215,78 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
         targetRefreshInterval = Mathf.Max(0.05f, targetRefreshInterval);
         aimRotationSpeed = Mathf.Max(0.1f, aimRotationSpeed);
         aimTolerance = Mathf.Max(0.05f, aimTolerance);
+        aimSyncAngleThreshold = Mathf.Max(0.01f, aimSyncAngleThreshold);
+
+        targetAimAngle = idlePitchAngle;
+        previousSyncedAimAngle = targetAimAngle;
+    }
+
+    private void OnEnable()
+    {
+        RefreshRigidbodyAuthorityState();
+    }
+
+    private void ConfigureRigidbody()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        enemyRigidbody.useGravity = false;
+        enemyRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        enemyRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        enemyRigidbody.constraints = RigidbodyConstraints.FreezeRotationX |
+                                     RigidbodyConstraints.FreezeRotationY |
+                                     RigidbodyConstraints.FreezeRotationZ;
+    }
+
+    private void RefreshRigidbodyAuthorityState()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            enemyRigidbody.isKinematic = false;
+            return;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            enemyRigidbody.isKinematic = true;
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            enemyRigidbody.isKinematic = false;
+            return;
+        }
+
+        enemyRigidbody.isKinematic = true;
+    }
+
+    private bool CanRunAuthorityLogic()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return true;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return false;
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private void ApplyConfig()
@@ -251,16 +313,25 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
     private void Update()
     {
+        if (!CanRunAuthorityLogic())
+        {
+            RotateWeaponPitch();
+            UpdateAnimator();
+            return;
+        }
+
         if (isDead)
         {
+            RotateWeaponPitch();
             UpdateAnimator();
             return;
         }
 
         RefreshTargetIfNeeded();
         UpdateMovementDirection();
-        RotateToTarget();
         UpdateAimLogic();
+        SyncHasTargetIfNeeded();
+        SyncAimAngleIfNeeded();
         RotateWeaponPitch();
         TryAttackTarget();
         UpdateAnimator();
@@ -268,12 +339,18 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
     private void FixedUpdate()
     {
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
         if (isDead)
         {
             UpdateAnimator();
             return;
         }
 
+        RotateToTarget();
         MoveToTarget();
     }
 
@@ -291,6 +368,16 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
         hasAimSolution = false;
         cachedAimTarget = null;
         targetAimAngle = idlePitchAngle;
+        currentState = HotshotState.Idle;
+
+        if (enemyRigidbody != null)
+        {
+            enemyRigidbody.velocity = Vector3.zero;
+            enemyRigidbody.angularVelocity = Vector3.zero;
+        }
+
+        SyncHasTargetIfNeeded();
+        SyncAimAngleIfNeeded();
     }
 
     private void RefreshTargetIfNeeded()
@@ -412,7 +499,12 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
             return;
         }
 
-        Vector3 directionToTarget = currentTarget.position - transform.position;
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        Vector3 directionToTarget = currentTarget.position - enemyRigidbody.position;
         directionToTarget.y = 0f;
 
         if (directionToTarget.sqrMagnitude <= 0.0001f)
@@ -422,9 +514,9 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
         Quaternion targetRotation = Quaternion.LookRotation(directionToTarget.normalized);
         Quaternion newRotation = Quaternion.Slerp(
-            transform.rotation,
+            enemyRigidbody.rotation,
             targetRotation,
-            RotationSpeed * Time.deltaTime
+            RotationSpeed * Time.fixedDeltaTime
         );
 
         enemyRigidbody.MoveRotation(newRotation);
@@ -432,6 +524,11 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
     public void MoveToTarget()
     {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
         if (currentState != HotshotState.Chasing && currentState != HotshotState.Retreating)
         {
             return;
@@ -547,6 +644,11 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
     private void TryAttackTarget()
     {
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
         if (currentTarget == null)
         {
             return;
@@ -630,6 +732,98 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
         cachedAimTarget = null;
     }
 
+    private void SyncHasTargetIfNeeded()
+    {
+        if (PhotonNetwork.InRoom == false)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient == false)
+        {
+            return;
+        }
+
+        bool newHasTarget = false;
+
+        if (currentTarget != null)
+        {
+            newHasTarget = true;
+        }
+
+        if (previousHasTarget == newHasTarget)
+        {
+            return;
+        }
+
+        previousHasTarget = newHasTarget;
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        photonView.RPC(nameof(RPC_SetHasTarget), RpcTarget.All, newHasTarget);
+    }
+
+    private void SyncAimAngleIfNeeded()
+    {
+        if (PhotonNetwork.InRoom == false)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient == false)
+        {
+            return;
+        }
+
+        if (hasSentAimSync)
+        {
+            float angleDifference = Mathf.Abs(Mathf.DeltaAngle(previousSyncedAimAngle, targetAimAngle));
+
+            if (angleDifference < aimSyncAngleThreshold)
+            {
+                return;
+            }
+        }
+
+        hasSentAimSync = true;
+        previousSyncedAimAngle = targetAimAngle;
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        photonView.RPC(nameof(RPC_SetAimAngle), RpcTarget.All, targetAimAngle, hasAimSolution);
+    }
+
+    [PunRPC]
+    private void RPC_SetHasTarget(bool value)
+    {
+        syncedHasTarget = value;
+
+        if (rootAnimator == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(hasTargetParameter))
+        {
+            return;
+        }
+
+        rootAnimator.SetBool(hasTargetParameter, value);
+    }
+
+    [PunRPC]
+    private void RPC_SetAimAngle(float newTargetAimAngle, bool newHasAimSolution)
+    {
+        targetAimAngle = newTargetAimAngle;
+        hasAimSolution = newHasAimSolution;
+    }
+
     private void UpdateAnimator()
     {
         if (rootAnimator == null)
@@ -639,9 +833,26 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
 
         bool hasTarget = false;
 
-        if (currentTarget != null)
+        if (PhotonNetwork.InRoom == true)
         {
-            hasTarget = true;
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                hasTarget = syncedHasTarget;
+            }
+            else
+            {
+                if (currentTarget != null)
+                {
+                    hasTarget = true;
+                }
+            }
+        }
+        else
+        {
+            if (currentTarget != null)
+            {
+                hasTarget = true;
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(hasTargetParameter))
@@ -699,5 +910,59 @@ public class HotshotController : MonoBehaviour, IEnemyController, IWaveScalable
     public void SetWaveIndex(int waveIndex)
     {
         currentWaveIndex = waveIndex;
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == true)
+            {
+                if (photonView != null)
+                {
+                    photonView.RPC(nameof(RPC_SetWaveIndex), RpcTarget.OthersBuffered, waveIndex);
+                }
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_SetWaveIndex(int waveIndex)
+    {
+        currentWaveIndex = waveIndex;
+    }
+
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        object[] data = photonView.InstantiationData;
+
+        if (data == null)
+        {
+            return;
+        }
+
+        if (data.Length < 1)
+        {
+            return;
+        }
+
+        if (data[0] is int)
+        {
+            currentWaveIndex = (int)data[0];
+        }
+
+        RefreshRigidbodyAuthorityState();
     }
 }

@@ -13,6 +13,12 @@ public class GameRestartController : MonoBehaviour
 
     public void RestartCurrentRun()
     {
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            PlayerMultiplayerRespawnController.RespawnLocalPlayerFromUI();
+            return;
+        }
+
         if (isRestartInProgress)
         {
             return;

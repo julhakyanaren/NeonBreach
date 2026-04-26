@@ -1,10 +1,11 @@
 using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(EnemyLineOfSightSensor))]
 [RequireComponent(typeof(WwiseEnemySFXController))]
-public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalable
+public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalable, IPunInstantiateMagicCallback
 {
     [Header("Config Source")]
     [Tooltip("Saberwing config with controller settings.")]
@@ -72,6 +73,9 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
     [Tooltip("Enemy Wwise SFX controller reference.")]
     [SerializeField] private WwiseEnemySFXController enemySfxController;
 
+    [Tooltip("PhotonView reference for multiplayer authority checks.")]
+    [SerializeField] private PhotonView photonView;
+
     [Header("Sensors")]
     [Tooltip("EnemyMovementSensor script reference.")]
     [SerializeField] private EnemyMovementSensor movementSensor;
@@ -111,69 +115,34 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
 
     public int CurrentWaveIndex
     {
-        get
-        {
-            return currentWaveIndex;
-        }
+        get { return currentWaveIndex; }
     }
 
     public float DetectionRadius
     {
-        get
-        {
-            return detectionRadius;
-        }
-        set
-        {
-            detectionRadius = Mathf.Max(0f, value);
-        }
+        get { return detectionRadius; }
+        set { detectionRadius = Mathf.Max(0f, value); }
     }
 
     public float MoveSpeed
     {
-        get
-        {
-            return moveSpeed;
-        }
-        set
-        {
-            moveSpeed = Mathf.Max(0f, value);
-        }
+        get { return moveSpeed; }
+        set { moveSpeed = Mathf.Max(0f, value); }
     }
 
     public float RotationSpeed
     {
-        get
-        {
-            return rotationSpeed;
-        }
-        set
-        {
-            rotationSpeed = Mathf.Max(0f, value);
-        }
+        get { return rotationSpeed; }
+        set { rotationSpeed = Mathf.Max(0f, value); }
     }
 
     private void Reset()
     {
-        if (lineOfSightSensor == null)
-        {
-            lineOfSightSensor = GetComponentInChildren<EnemyLineOfSightSensor>();
-        }
-
-        if (enemyAnimator == null)
-        {
-            enemyAnimator = GetComponent<Animator>();
-        }
-
-        if (enemyRigidbody == null)
-        {
-            enemyRigidbody = GetComponent<Rigidbody>();
-        }
-
-        if (enemySfxController == null)
-        {
-            enemySfxController = GetComponent<WwiseEnemySFXController>();
-        }
+        lineOfSightSensor = GetComponentInChildren<EnemyLineOfSightSensor>();
+        enemyAnimator = GetComponent<Animator>();
+        enemyRigidbody = GetComponent<Rigidbody>();
+        enemySfxController = GetComponent<WwiseEnemySFXController>();
+        photonView = GetComponent<PhotonView>();
     }
 
     private void Awake()
@@ -198,6 +167,12 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             enemySfxController = GetComponent<WwiseEnemySFXController>();
         }
 
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        ConfigureRigidbody();
         ApplyConfig();
         RebuildRuntimeDamage();
     }
@@ -206,6 +181,8 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
     {
         StaticEvents.PauseOpened += HandlePauseOpened;
         StaticEvents.PauseClosed += HandlePauseClosed;
+
+        RefreshRigidbodyAuthorityState();
     }
 
     private void OnDisable()
@@ -216,6 +193,69 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
         StopAllCoroutines();
         isAttacking = false;
         StopAttackSfx();
+    }
+
+    private void ConfigureRigidbody()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        enemyRigidbody.useGravity = false;
+        enemyRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        enemyRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        enemyRigidbody.constraints = RigidbodyConstraints.FreezeRotationX |
+                                     RigidbodyConstraints.FreezeRotationY |
+                                     RigidbodyConstraints.FreezeRotationZ;
+    }
+
+    private void RefreshRigidbodyAuthorityState()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            enemyRigidbody.isKinematic = false;
+            return;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            enemyRigidbody.isKinematic = true;
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            enemyRigidbody.isKinematic = false;
+            return;
+        }
+
+        enemyRigidbody.isKinematic = true;
+    }
+
+    private bool CanRunAuthorityLogic()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return true;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return false;
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private void ApplyConfig()
@@ -262,6 +302,11 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             return;
         }
 
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
         FindTarget();
 
         if (attackTimer > 0f)
@@ -278,14 +323,38 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
         if (isAttacking)
         {
             moveDirection = Vector3.zero;
-            RotateToTarget();
             return;
         }
 
         UpdateMovementDirection();
-        RotateToTarget();
-        MoveToTarget();
         TryAttack();
+    }
+
+    private void FixedUpdate()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
+        if (!hasTarget || target == null)
+        {
+            return;
+        }
+
+        RotateToTarget();
+
+        if (isAttacking)
+        {
+            return;
+        }
+
+        MoveToTarget();
     }
 
     public void FindTarget()
@@ -383,7 +452,12 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             return;
         }
 
-        Vector3 lookDirection = target.position - transform.position;
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        Vector3 lookDirection = target.position - enemyRigidbody.position;
         lookDirection.y = 0f;
 
         if (lookDirection.sqrMagnitude < 0.0001f)
@@ -391,16 +465,23 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             return;
         }
 
-        Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized);
+        Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
 
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
+        Quaternion nextRotation = Quaternion.Slerp(
+            enemyRigidbody.rotation,
             targetRotation,
-            RotationSpeed * Time.deltaTime);
+            RotationSpeed * Time.fixedDeltaTime);
+
+        enemyRigidbody.MoveRotation(nextRotation);
     }
 
     public void MoveToTarget()
     {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
         if (moveDirection.sqrMagnitude < 0.0001f)
         {
             return;
@@ -414,7 +495,18 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             }
         }
 
-        transform.position += moveDirection * MoveSpeed * Time.deltaTime;
+        Vector3 nextPosition = enemyRigidbody.position + moveDirection * MoveSpeed * Time.fixedDeltaTime;
+        enemyRigidbody.MovePosition(nextPosition);
+    }
+
+    [PunRPC]
+    private void Attack_RPC()
+    {
+        if (enemyAnimator != null)
+        {
+            enemyAnimator.SetFloat(attackSpeedCoeffName, attackSpeedCoeff);
+            enemyAnimator.SetTrigger(attackTriggerName);
+        }
     }
 
     private void TryAttack()
@@ -441,8 +533,18 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
 
         if (enemyAnimator != null)
         {
-            enemyAnimator.SetTrigger(attackTriggerName);
-            enemyAnimator.SetFloat(attackSpeedCoeffName, attackSpeedCoeff);
+            if (RuntimeOptions.MultiplayerMode)
+            {
+                if (photonView != null && PhotonNetwork.IsMasterClient)
+                {
+                    photonView.RPC(nameof(Attack_RPC), RpcTarget.All);
+                }
+            }
+            else
+            {
+                enemyAnimator.SetFloat(attackSpeedCoeffName, attackSpeedCoeff);
+                enemyAnimator.SetTrigger(attackTriggerName);
+            }
         }
 
         ResetAttackCooldown();
@@ -485,6 +587,11 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
 
     public void PerformAttackHit()
     {
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
         Collider[] hits = Physics.OverlapSphere(transform.position, attackHitRadius, playerLayer);
 
         for (int i = 0; i < hits.Length; i++)
@@ -496,9 +603,59 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
                 continue;
             }
 
-            damageable.ApplyDamage(attackDamage);
+            if (RuntimeOptions.MultiplayerMode)
+            {
+                TryApplyDamageInMultiplayer(hits[i], attackDamage);
+            }
+            else
+            {
+                damageable.ApplyDamage(attackDamage);
+            }
+
             break;
         }
+    }
+
+    private void TryApplyDamageInMultiplayer(Collider hit, float damage)
+    {
+        PhotonView targetPhotonView = hit.GetComponentInParent<PhotonView>();
+
+        if (targetPhotonView == null)
+        {
+            return;
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        photonView.RPC(nameof(ApplyDamageToTarget_RPC), RpcTarget.All, targetPhotonView.ViewID, damage);
+    }
+
+    [PunRPC]
+    private void ApplyDamageToTarget_RPC(int targetViewId, float damage)
+    {
+        PhotonView targetPhotonView = PhotonView.Find(targetViewId);
+
+        if (targetPhotonView == null)
+        {
+            return;
+        }
+
+        if (!targetPhotonView.IsMine)
+        {
+            return;
+        }
+
+        IDamageable damageable = targetPhotonView.GetComponentInParent<IDamageable>();
+
+        if (damageable == null)
+        {
+            return;
+        }
+
+        damageable.ApplyDamage(damage);
     }
 
     public void ResetAttackCooldown()
@@ -523,7 +680,7 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             return;
         }
 
-        enemyRigidbody.isKinematic = false;
+        RefreshRigidbodyAuthorityState();
     }
 
     public void SetDeadState(bool deadState)
@@ -532,11 +689,35 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
 
         if (deadState)
         {
+            moveDirection = Vector3.zero;
             StopAttackSfx();
+
+            if (enemyRigidbody != null)
+            {
+                enemyRigidbody.velocity = Vector3.zero;
+                enemyRigidbody.angularVelocity = Vector3.zero;
+            }
         }
     }
 
     public void SetWaveIndex(int waveIndex)
+    {
+        currentWaveIndex = waveIndex;
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == true)
+            {
+                if (photonView != null)
+                {
+                    photonView.RPC(nameof(RPC_SetWaveIndex), RpcTarget.OthersBuffered, waveIndex);
+                }
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_SetWaveIndex(int waveIndex)
     {
         currentWaveIndex = waveIndex;
     }
@@ -610,6 +791,43 @@ public class SaberwingController : MonoBehaviour, IEnemyController, IWaveScalabl
             EnemySfxType.SaberwingAttack,
             WwiseEventsType.Resume,
             gameObject);
+    }
+
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        object[] data = photonView.InstantiationData;
+
+        if (data == null)
+        {
+            return;
+        }
+
+        if (data.Length < 1)
+        {
+            return;
+        }
+
+        if (data[0] is int)
+        {
+            currentWaveIndex = (int)data[0];
+        }
+
+        RefreshRigidbodyAuthorityState();
     }
 
     private void OnDrawGizmosSelected()

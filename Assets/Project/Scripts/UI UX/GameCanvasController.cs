@@ -95,6 +95,8 @@ public class GameCanvasController : MonoBehaviour
         }
     }
 
+    public static bool IsSpawnCompleted { get; private set; }
+
     private void Awake()
     {
         initialized = ValidateReferences();
@@ -291,6 +293,7 @@ public class GameCanvasController : MonoBehaviour
         }
 
         isSpawning = true;
+        IsSpawnCompleted = false;
         SpawnStarted?.Invoke();
 
         RuntimeOptions.InputBlocked = true;
@@ -313,6 +316,7 @@ public class GameCanvasController : MonoBehaviour
 
         spawned = true;
         isSpawning = false;
+        IsSpawnCompleted = true;
         SpawnCompleted?.Invoke();
     }
 
@@ -377,101 +381,149 @@ public class GameCanvasController : MonoBehaviour
 
     private bool ValidateReferences()
     {
+        bool loggingError = RuntimeOptions.LoggingError;
         if (deathScreenController == null)
         {
-            Debug.LogError("GameCanvasController: deathScreenController is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: deathScreenController is missing.", this);
+            }
+            
             return false;
         }
 
         if (hudPlayRoot == null)
         {
-            Debug.LogError("GameCanvasController: hudPlayRoot is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: hudPlayRoot is missing.", this);
+            }
+            
             return false;
         }
 
         if (hudStartRoot == null)
         {
-            Debug.LogError("GameCanvasController: hudStartRoot is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: hudStartRoot is missing.", this);
+            }
             return false;
         }
 
         if (hudDisconnectRoot == null)
         {
-            Debug.LogError("GameCanvasController: hudDisconnectRoot is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: hudDisconnectRoot is missing.", this);
+            }
             return false;
         }
 
         if (achievmentsMenuRoot == null)
         {
-            Debug.LogError("GameCanvasController: achievmentsMenuRoot is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: achievmentsMenuRoot is missing.", this);
+            }
             return false;
         }
 
         if (canvasAnimator == null)
         {
-            Debug.LogError("GameCanvasController: canvasAnimator is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: canvasAnimator is missing.", this);
+            }
             return false;
         }
 
         if (gameMusicController == null)
         {
-            Debug.LogError("GameCanvasController: gameMusicController is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: gameMusicController is missing.", this);
+            }
             return false;
         }
 
         if (pauseMenuRoot == null)
         {
-            Debug.LogError("GameCanvasController: pauseMenuRoot is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: pauseMenuRoot is missing.", this);
+            }
             return false;
         }
 
         if (pauseAction == null)
         {
-            Debug.LogError("GameCanvasController: pauseAction is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: pauseAction is missing.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrEmpty(disconnectingParameter))
         {
-            Debug.LogError("GameCanvasController: disconnectingParameter is null or empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: disconnectingParameter is null or empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrEmpty(spawnParameter))
         {
-            Debug.LogError("GameCanvasController: spawnParameter is null or empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: spawnParameter is null or empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrEmpty(disconnectingSpeedParameter))
         {
-            Debug.LogError("GameCanvasController: disconnectingSpeedParameter is null or empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("GameCanvasController: disconnectingSpeedParameter is null or empty.", this);
+            }
             return false;
         }
 
         if (animationsSpeed <= 0.1f)
         {
-            Debug.LogWarning(
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning(
                 $"GameCanvasController: disconnectingSpeed value {animationsSpeed} is incorrect, changed to 0.1f",
                 this);
+            }
 
             animationsSpeed = 0.1f;
         }
 
         if (disconnectingBaseDuration <= 0f)
         {
-            Debug.LogWarning(
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning(
                 $"GameCanvasController: disconnectingBaseDuration value {disconnectingBaseDuration} is incorrect, changed to 3.5f",
                 this);
+            }
 
             disconnectingBaseDuration = 3.5f;
         }
 
         if (spawinigBaseDuration <= 0f)
         {
-            Debug.LogWarning(
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning(
                 $"GameCanvasController: spawinigBaseDuration value {spawinigBaseDuration} is incorrect, changed to 6f",
                 this);
+            }
 
             spawinigBaseDuration = 6f;
         }

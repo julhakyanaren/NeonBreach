@@ -1,4 +1,5 @@
 using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
@@ -36,6 +37,9 @@ public class PickupController : MonoBehaviour
     [Tooltip("GameObject used as audio source for pickup SFX.")]
     [SerializeField] private GameObject sfxSource;
 
+    [Tooltip("PhotonView used for pickup network synchronization.")]
+    [SerializeField] private PhotonView photonView;
+
     [Header("Runtime")]
     [Tooltip("Whether pickup was already collected.")]
     [SerializeField] private bool isPickedUp = false;
@@ -43,10 +47,13 @@ public class PickupController : MonoBehaviour
     [Tooltip("Whether PowerUp SFX is currently active.")]
     [SerializeField] private bool isPowerUpSfxPlaying = false;
 
+    private Coroutine destroyCoroutine;
+
     private void Reset()
     {
         triggerCollider = GetComponent<Collider>();
         gameplaySfxController = GetComponent<WwiseGameplaySFXController>();
+        photonView = GetComponent<PhotonView>();
 
         if (pickupAnimator == null)
         {
@@ -54,8 +61,12 @@ public class PickupController : MonoBehaviour
         }
 
         Rigidbody rb = GetComponent<Rigidbody>();
-        rb.isKinematic = true;
-        rb.useGravity = false;
+
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
 
         if (triggerCollider != null)
         {
@@ -75,6 +86,16 @@ public class PickupController : MonoBehaviour
             gameplaySfxController = GetComponent<WwiseGameplaySFXController>();
         }
 
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        if (pickupAnimator == null)
+        {
+            pickupAnimator = GetComponentInChildren<Animator>();
+        }
+
         if (sfxSource == null)
         {
             sfxSource = gameObject;
@@ -85,6 +106,13 @@ public class PickupController : MonoBehaviour
     {
         StaticEvents.PauseOpened += HandlePauseOpened;
         StaticEvents.PauseClosed += HandlePauseClosed;
+
+        isPickedUp = false;
+
+        if (triggerCollider != null)
+        {
+            triggerCollider.enabled = true;
+        }
     }
 
     private void OnDisable()
@@ -93,6 +121,12 @@ public class PickupController : MonoBehaviour
         StaticEvents.PauseClosed -= HandlePauseClosed;
 
         StopPowerUpSfx();
+
+        if (destroyCoroutine != null)
+        {
+            StopCoroutine(destroyCoroutine);
+            destroyCoroutine = null;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -109,22 +143,96 @@ public class PickupController : MonoBehaviour
             return;
         }
 
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            TryPickupMultiplayer(other, receiver);
+            return;
+        }
+
+        TryPickupSingleplayer(receiver);
+    }
+
+    private void TryPickupSingleplayer(PlayerBuffReceiver receiver)
+    {
         isPickedUp = true;
 
         ApplyPickup(receiver);
-
-        GameSessionStats stats = GameSessionStats.Instance;
-
-        if (stats != null)
-        {
-            stats.AddPickup(pickupType);
-        }
+        AddPickupStats();
 
         PlayPowerUpSfx();
         PlayAnimation();
         DisableCollider();
 
-        StartCoroutine(DestroyRoutine());
+        destroyCoroutine = StartCoroutine(DestroyRoutineSingleplayer());
+    }
+
+    private void TryPickupMultiplayer(Collider other, PlayerBuffReceiver receiver)
+    {
+        PhotonView playerPhotonView = other.GetComponentInParent<PhotonView>();
+
+        if (playerPhotonView == null)
+        {
+            return;
+        }
+
+        if (!playerPhotonView.IsMine)
+        {
+            return;
+        }
+
+        isPickedUp = true;
+
+        ApplyPickup(receiver);
+        AddPickupStats();
+
+        if (photonView != null)
+        {
+            photonView.RPC(nameof(RPC_PlayPickupFeedback), RpcTarget.All);
+        }
+        else
+        {
+            PlayPowerUpSfx();
+            PlayAnimation();
+            DisableCollider();
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            destroyCoroutine = StartCoroutine(DestroyRoutineMultiplayer());
+        }
+        else
+        {
+            if (photonView != null)
+            {
+                photonView.RPC(nameof(RPC_RequestDestroy), RpcTarget.MasterClient);
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_PlayPickupFeedback()
+    {
+        isPickedUp = true;
+
+        PlayPowerUpSfx();
+        PlayAnimation();
+        DisableCollider();
+    }
+
+    [PunRPC]
+    private void RPC_RequestDestroy()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        if (destroyCoroutine != null)
+        {
+            return;
+        }
+
+        destroyCoroutine = StartCoroutine(DestroyRoutineMultiplayer());
     }
 
     private void ApplyPickup(PlayerBuffReceiver receiver)
@@ -153,6 +261,18 @@ public class PickupController : MonoBehaviour
         }
     }
 
+    private void AddPickupStats()
+    {
+        GameSessionStats stats = GameSessionStats.Instance;
+
+        if (stats == null)
+        {
+            return;
+        }
+
+        stats.AddPickup(pickupType);
+    }
+
     private void PlayAnimation()
     {
         if (pickupAnimator == null)
@@ -165,16 +285,28 @@ public class PickupController : MonoBehaviour
 
     private void DisableCollider()
     {
-        if (triggerCollider != null)
+        if (triggerCollider == null)
         {
-            triggerCollider.enabled = false;
+            return;
         }
+
+        triggerCollider.enabled = false;
     }
 
-    private IEnumerator DestroyRoutine()
+    private IEnumerator DestroyRoutineSingleplayer()
     {
         yield return new WaitForSeconds(destroyDelay);
         Destroy(gameObject);
+    }
+
+    private IEnumerator DestroyRoutineMultiplayer()
+    {
+        yield return new WaitForSeconds(destroyDelay);
+
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.Destroy(gameObject);
+        }
     }
 
     private void PlayPowerUpSfx()

@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using Unity.VisualScripting.FullSerializer;
+using Photon.Pun;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(WwiseEnemySFXController))]
-public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalable
+[RequireComponent(typeof(PhotonView))]
+public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalable, IPunInstantiateMagicCallback
 {
     [Header("Config Source")]
     [Tooltip("Jaggernaut config with controller settings.")]
@@ -96,6 +96,9 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
     [Tooltip("EnemyLineOfSightSensor script reference.")]
     [SerializeField] private EnemyLineOfSightSensor lineOfSightSensor;
 
+    [Tooltip("Enemy Rigidbody used for physics-based movement.")]
+    [SerializeField] private Rigidbody enemyRigidbody;
+
     [Header("Sensors")]
     [Tooltip("EnemyMovementSensor script reference.")]
     [SerializeField] private EnemyMovementSensor movementSensor;
@@ -133,6 +136,8 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
     [Tooltip("Draw Stop Distance")]
     [SerializeField] private bool drawGizmosStopDistance = true;
 
+    private PhotonView photonView;
+
     private bool previousHasTarget;
     private float lastDamageTime = -999f;
     private int hasTargetParameterHash;
@@ -141,63 +146,246 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
     private float baseMoveSpeed;
     private float baseRotationSpeed;
     private float baseContactDamage;
+    private float lockedYPosition;
 
     private bool isDead = false;
 
     public int CurrentWaveIndex
     {
-        get
-        {
-            return currentWaveIndex;
-        }
+        get { return currentWaveIndex; }
     }
 
     public float DetectionRadius
     {
-        get
-        {
-            return detectionRadius;
-        }
-        set
-        {
-            detectionRadius = Mathf.Max(0f, value);
-        }
+        get { return detectionRadius; }
+        set { detectionRadius = Mathf.Max(0f, value); }
     }
 
     public float MoveSpeed
     {
-        get
-        {
-            return moveSpeed;
-        }
-        set
-        {
-            moveSpeed = Mathf.Max(0f, value);
-        }
+        get { return moveSpeed; }
+        set { moveSpeed = Mathf.Max(0f, value); }
     }
 
     public float RotationSpeed
     {
-        get
-        {
-            return rotationSpeed;
-        }
-        set
-        {
-            rotationSpeed = Mathf.Max(0f, value);
-        }
+        get { return rotationSpeed; }
+        set { rotationSpeed = Mathf.Max(0f, value); }
     }
 
     public float ContactDamage
     {
-        get
+        get { return contactDamage; }
+        set { contactDamage = Mathf.Max(0f, value); }
+    }
+
+    private void Reset()
+    {
+        jaggernautAnimator = GetComponent<Animator>();
+        enemySfxController = GetComponent<WwiseEnemySFXController>();
+        enemyRigidbody = GetComponent<Rigidbody>();
+        photonView = GetComponent<PhotonView>();
+        lineOfSightSensor = GetComponentInChildren<EnemyLineOfSightSensor>();
+        movementSensor = GetComponentInChildren<EnemyMovementSensor>();
+    }
+
+    private void Awake()
+    {
+        photonView = GetComponent<PhotonView>();
+
+        if (jaggernautAnimator == null)
         {
-            return contactDamage;
+            jaggernautAnimator = GetComponent<Animator>();
         }
-        set
+
+        if (enemySfxController == null)
         {
-            contactDamage = Mathf.Max(0f, value);
+            enemySfxController = GetComponent<WwiseEnemySFXController>();
         }
+
+        if (enemyRigidbody == null)
+        {
+            enemyRigidbody = GetComponent<Rigidbody>();
+        }
+
+        if (lineOfSightSensor == null)
+        {
+            lineOfSightSensor = GetComponentInChildren<EnemyLineOfSightSensor>();
+        }
+
+        if (movementSensor == null)
+        {
+            movementSensor = GetComponentInChildren<EnemyMovementSensor>();
+        }
+
+        if (pushCheckPoint == null)
+        {
+            pushCheckPoint = transform;
+        }
+
+        if (enemyRigidbody != null)
+        {
+            lockedYPosition = enemyRigidbody.position.y;
+        }
+
+        ConfigureRigidbody();
+        ApplyConfig();
+
+        baseMoveSpeed = moveSpeed;
+        baseRotationSpeed = rotationSpeed;
+        baseContactDamage = contactDamage;
+
+        hasTargetParameterHash = Animator.StringToHash(hasTargetParameter);
+        previousHasTarget = hasTarget;
+    }
+
+    private void OnEnable()
+    {
+        StaticEvents.PauseOpened += HandlePauseOpened;
+        StaticEvents.PauseClosed += HandlePauseClosed;
+
+        if (enemyRigidbody != null)
+        {
+            lockedYPosition = enemyRigidbody.position.y;
+        }
+
+        RefreshRigidbodyAuthorityState();
+    }
+
+    private void OnDisable()
+    {
+        StaticEvents.PauseOpened -= HandlePauseOpened;
+        StaticEvents.PauseClosed -= HandlePauseClosed;
+
+        StopAttackSfx();
+    }
+
+    private void Update()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
+        FindTarget();
+        UpdateAnimatorTargetState();
+
+        if (!hasTarget)
+        {
+            moveDirection = Vector3.zero;
+            return;
+        }
+
+        UpdateMovementDirection();
+    }
+
+    private void FixedUpdate()
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
+        LockRigidbodyYPosition();
+
+        if (!hasTarget)
+        {
+            return;
+        }
+
+        RotateToTarget();
+        MoveToTarget();
+    }
+
+    private void ConfigureRigidbody()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        enemyRigidbody.useGravity = false;
+        enemyRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+        enemyRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+        enemyRigidbody.constraints =
+            RigidbodyConstraints.FreezePositionY |
+            RigidbodyConstraints.FreezeRotationX |
+            RigidbodyConstraints.FreezeRotationY |
+            RigidbodyConstraints.FreezeRotationZ;
+    }
+
+    private void LockRigidbodyYPosition()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        Vector3 lockedPosition = enemyRigidbody.position;
+        lockedPosition.y = lockedYPosition;
+        enemyRigidbody.position = lockedPosition;
+
+        Vector3 velocity = enemyRigidbody.velocity;
+        velocity.y = 0f;
+        enemyRigidbody.velocity = velocity;
+    }
+
+    private void RefreshRigidbodyAuthorityState()
+    {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            enemyRigidbody.isKinematic = false;
+            return;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            enemyRigidbody.isKinematic = true;
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            enemyRigidbody.isKinematic = false;
+            return;
+        }
+
+        enemyRigidbody.isKinematic = true;
+    }
+
+    private bool CanRunAuthorityLogic()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return true;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return false;
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private void ApplyConfig()
@@ -239,73 +427,14 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
 
     private void RebuildRuntimeDamage()
     {
-    }
+        float baseDamage = baseContactDamage;
 
-    private void Reset()
-    {
-        jaggernautAnimator = GetComponent<Animator>();
-        enemySfxController = GetComponent<WwiseEnemySFXController>();
-    }
-
-    private void Awake()
-    {
-        if (jaggernautAnimator == null)
+        if (configJaggernautSO != null)
         {
-            jaggernautAnimator = GetComponent<Animator>();
+            baseDamage = configJaggernautSO.contactDamage;
         }
 
-        if (enemySfxController == null)
-        {
-            enemySfxController = GetComponent<WwiseEnemySFXController>();
-        }
-
-        if (pushCheckPoint == null)
-        {
-            pushCheckPoint = transform;
-        }
-
-        ApplyConfig();
-
-        baseMoveSpeed = moveSpeed;
-        baseRotationSpeed = rotationSpeed;
-        baseContactDamage = contactDamage;
-
-        hasTargetParameterHash = Animator.StringToHash(hasTargetParameter);
-        previousHasTarget = hasTarget;
-    }
-
-    private void OnEnable()
-    {
-        StaticEvents.PauseOpened += HandlePauseOpened;
-        StaticEvents.PauseClosed += HandlePauseClosed;
-    }
-
-    private void OnDisable()
-    {
-        StaticEvents.PauseOpened -= HandlePauseOpened;
-        StaticEvents.PauseClosed -= HandlePauseClosed;
-
-        StopAttackSfx();
-    }
-
-    private void Update()
-    {
-        if (isDead)
-        {
-            return;
-        }
-
-        FindTarget();
-        UpdateAnimatorTargetState();
-
-        if (!hasTarget)
-        {
-            return;
-        }
-
-        UpdateMovementDirection();
-        RotateToTarget();
-        MoveToTarget();
+        ContactDamage = baseDamage * damageMultiplier * currentDamageCoeff;
     }
 
     public void SetDeadState(bool deadState)
@@ -314,7 +443,14 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
 
         if (deadState)
         {
+            moveDirection = Vector3.zero;
             StopAttackSfx();
+
+            if (enemyRigidbody != null)
+            {
+                enemyRigidbody.velocity = Vector3.zero;
+                enemyRigidbody.angularVelocity = Vector3.zero;
+            }
         }
     }
 
@@ -349,7 +485,7 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
 
         MoveSpeed = baseMoveSpeed * currentMoveSpeedCoeff;
         RotationSpeed = baseRotationSpeed * currentRotationSpeedCoeff;
-        ContactDamage = baseContactDamage * currentDamageCoeff;
+        ContactDamage = baseContactDamage * currentDamageCoeff * damageMultiplier;
     }
 
     public void FindTarget()
@@ -452,7 +588,12 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
             return;
         }
 
-        Vector3 lookDirection = target.position - transform.position;
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
+        Vector3 lookDirection = target.position - enemyRigidbody.position;
         lookDirection.y = 0f;
 
         if (lookDirection.sqrMagnitude < 0.0001f)
@@ -462,14 +603,21 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
 
         Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized);
 
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
+        Quaternion nextRotation = Quaternion.Slerp(
+            enemyRigidbody.rotation,
             targetRotation,
-            RotationSpeed * Time.deltaTime);
+            RotationSpeed * Time.fixedDeltaTime);
+
+        enemyRigidbody.MoveRotation(nextRotation);
     }
 
     public void MoveToTarget()
     {
+        if (enemyRigidbody == null)
+        {
+            return;
+        }
+
         if (moveDirection.sqrMagnitude < 0.0001f)
         {
             return;
@@ -483,11 +631,18 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
             }
         }
 
-        transform.position += moveDirection * MoveSpeed * Time.deltaTime;
+        Vector3 nextPosition = enemyRigidbody.position + moveDirection * MoveSpeed * Time.fixedDeltaTime;
+        nextPosition.y = lockedYPosition;
+        enemyRigidbody.MovePosition(nextPosition);
     }
 
     public void TryDealContactDamage(Collider other)
     {
+        if (!CanRunAuthorityLogic())
+        {
+            return;
+        }
+
         if (other == null)
         {
             return;
@@ -517,6 +672,25 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
             return;
         }
 
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            PhotonView targetPhotonView = playerHealth.GetComponentInParent<PhotonView>();
+
+            if (targetPhotonView == null)
+            {
+                return;
+            }
+
+            photonView.RPC(
+                nameof(RPC_ApplyContactDamage),
+                RpcTarget.All,
+                targetPhotonView.ViewID,
+                ContactDamage);
+
+            lastDamageTime = Time.time;
+            return;
+        }
+
         damageable.ApplyDamage(ContactDamage);
         lastDamageTime = Time.time;
     }
@@ -533,8 +707,68 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
             return;
         }
 
-        jaggernautAnimator.SetBool(hasTargetParameterHash, hasTarget);
         previousHasTarget = hasTarget;
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView == null)
+            {
+                return;
+            }
+
+            photonView.RPC(nameof(RPC_SetHasTarget), RpcTarget.All, hasTarget);
+            return;
+        }
+
+        jaggernautAnimator.SetBool(hasTargetParameterHash, hasTarget);
+    }
+
+    [PunRPC]
+    private void RPC_SetHasTarget(bool newHasTarget)
+    {
+        hasTarget = newHasTarget;
+
+        if (jaggernautAnimator == null)
+        {
+            return;
+        }
+
+        jaggernautAnimator.SetBool(hasTargetParameterHash, newHasTarget);
+    }
+
+    [PunRPC]
+    private void RPC_ApplyContactDamage(int targetViewId, float damage)
+    {
+        PhotonView targetPhotonView = PhotonView.Find(targetViewId);
+
+        if (targetPhotonView == null)
+        {
+            return;
+        }
+
+        if (!targetPhotonView.IsMine)
+        {
+            return;
+        }
+
+        IDamageable damageable = targetPhotonView.GetComponent<IDamageable>();
+
+        if (damageable == null)
+        {
+            damageable = targetPhotonView.GetComponentInChildren<IDamageable>();
+        }
+
+        if (damageable == null)
+        {
+            damageable = targetPhotonView.GetComponentInParent<IDamageable>();
+        }
+
+        if (damageable == null)
+        {
+            return;
+        }
+
+        damageable.ApplyDamage(damage);
     }
 
     private bool IsPushBlockedByObstacle()
@@ -545,7 +779,7 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
             return false;
         }
 
-        Vector3 center = pushCheckPoint.position + pushCheckOffset;
+        Vector3 center = pushCheckPoint.position + transform.rotation * pushCheckOffset;
         Vector3 halfExtents = pushBlockedBoxSize * 0.5f;
 
         Collider[] hits = Physics.OverlapBox(center, halfExtents, transform.rotation, pushBlockerMask);
@@ -652,7 +886,7 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
                     Gizmos.color = Color.blue;
                 }
 
-                Vector3 center = pushCheckPoint.position + pushCheckOffset;
+                Vector3 center = pushCheckPoint.position + transform.rotation * pushCheckOffset;
 
                 Gizmos.matrix = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
                 Gizmos.DrawWireCube(Vector3.zero, pushBlockedBoxSize);
@@ -669,5 +903,59 @@ public class JaggernautController : MonoBehaviour, IEnemyController, IWaveScalab
     public void SetWaveIndex(int waveIndex)
     {
         currentWaveIndex = waveIndex;
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == true)
+            {
+                if (photonView != null)
+                {
+                    photonView.RPC(nameof(RPC_SetWaveIndex), RpcTarget.OthersBuffered, waveIndex);
+                }
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_SetWaveIndex(int waveIndex)
+    {
+        currentWaveIndex = waveIndex;
+    }
+
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        object[] data = photonView.InstantiationData;
+
+        if (data == null)
+        {
+            return;
+        }
+
+        if (data.Length < 1)
+        {
+            return;
+        }
+
+        if (data[0] is int)
+        {
+            currentWaveIndex = (int)data[0];
+        }
+
+        RefreshRigidbodyAuthorityState();
     }
 }

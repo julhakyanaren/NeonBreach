@@ -12,6 +12,15 @@ public class MenuPhotonLauncher : MonoBehaviourPunCallbacks
     [Range(1f, 3f)]
     [SerializeField] private byte maxPlayers = 3;
 
+    [Header("Photon data send settings")]
+    [Tooltip("Defines how many times per second the PhotonHandler should send data, if any is queued")]
+    [Range(10, 60)]
+    [SerializeField] private int sendRate = 40;
+
+    [Tooltip(" Defines how many times per second OnPhotonSerialize should be called on PhotonViews for controlled objects")]
+    [Range(10, 30)]
+    [SerializeField] private int serializationRate = 20;
+
     [Header("Debug")]
     [Tooltip("If true, debug logs will be printed.")]
     [SerializeField] private bool enableLogs = true;
@@ -32,6 +41,8 @@ public class MenuPhotonLauncher : MonoBehaviourPunCallbacks
 
         if (PhotonNetwork.IsConnected)
         {
+            ApplyPhotonNetworkRates();
+
             if (enableLogs)
             {
                 Debug.Log("MenuPhotonLauncher: Already connected. Joining random room...", this);
@@ -43,6 +54,8 @@ public class MenuPhotonLauncher : MonoBehaviourPunCallbacks
 
         PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.GameVersion = gameVersion;
+
+        ApplyPhotonNetworkRates();
 
         if (enableLogs)
         {
@@ -136,5 +149,11 @@ public class MenuPhotonLauncher : MonoBehaviourPunCallbacks
 
         isStartingMultiplayer = false;
         targetSceneName = string.Empty;
+    }
+
+    private void ApplyPhotonNetworkRates()
+    {
+        PhotonNetwork.SendRate = sendRate;
+        PhotonNetwork.SerializationRate = serializationRate;
     }
 }

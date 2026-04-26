@@ -26,7 +26,10 @@ public class CameraModeBootstrap : MonoBehaviour, IPlayerSpawnListener
     {
         if (playerInstance == null)
         {
-            Debug.LogError("CameraModeBootstrap: playerInstance is null.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("CameraModeBootstrap: playerInstance is null.", this);
+            }
             return;
         }
 
@@ -38,7 +41,10 @@ public class CameraModeBootstrap : MonoBehaviour, IPlayerSpawnListener
     {
         if (playerTransform == null)
         {
-            Debug.LogWarning("CameraModeBootstrap: playerTransform is null.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("CameraModeBootstrap: playerTransform is null.", this);
+            }
             return;
         }
 
@@ -91,7 +97,10 @@ public class CameraModeBootstrap : MonoBehaviour, IPlayerSpawnListener
 
         if (anchor == null)
         {
-            Debug.LogWarning("CameraModeBootstrap: Third-person anchor not found on spawned player.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("CameraModeBootstrap: Third-person anchor not found on spawned player.", this);
+            }
             return;
         }
 

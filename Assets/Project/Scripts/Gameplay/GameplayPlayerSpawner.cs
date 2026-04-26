@@ -32,6 +32,14 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
     private GameObject spawnedPlayer;
 
+    public IReadOnlyList<SpawnPlatformController> SpawnPlatforms
+    {
+        get
+        {
+            return spawnPlatforms;
+        }
+    }
+
     private void Start()
     {
         if (RuntimeOptions.MultiplayerMode == false)
@@ -47,18 +55,24 @@ public class GameplayPlayerSpawner : MonoBehaviour
     {
         float elapsed = 0f;
 
-        while (PhotonNetwork.InRoom == false)
+        while (PhotonNetwork.InRoom == false || PhotonNetwork.IsConnectedAndReady == false)
         {
             elapsed += Time.unscaledDeltaTime;
 
             if (elapsed >= multiplayerRoomWaitTimeout)
             {
-                Debug.LogError("GameplayPlayerSpawner: Timed out while waiting for Photon room before multiplayer spawn.", this);
+                if (RuntimeOptions.LoggingError)
+                {
+                    Debug.LogError("GameplayPlayerSpawner: Timed out while waiting for Photon room before multiplayer spawn.", this);
+                }
+
                 yield break;
             }
 
             yield return null;
         }
+
+        yield return new WaitForSecondsRealtime(0.5f);
 
         SpawnMultiplayerPlayer();
     }
@@ -69,7 +83,11 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (targetEntry == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Target character entry was not found.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Target character entry was not found.", this);
+            }
+            
             return;
         }
 
@@ -77,7 +95,11 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (targetPrefab == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Singleplayer prefab was not found.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Singleplayer prefab was not found.", this);
+            }
+            
             return;
         }
 
@@ -85,7 +107,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (selectedPlatform == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: No available spawn platform found for singleplayer.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: No available spawn platform found for singleplayer.", this);
+            }
             return;
         }
 
@@ -93,7 +118,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (spawnPoint == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Selected singleplayer spawn point is null.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Selected singleplayer spawn point is null.", this);
+            }
             return;
         }
 
@@ -106,11 +134,15 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (logSpawnFlow)
         {
-            Debug.Log(
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log(
                 "GameplayPlayerSpawner: Spawned singleplayer character " +
                 RuntimeOptions.ConfirmedCharacter +
                 " on platform " + selectedPlatform.name,
                 this);
+            }
+            
         }
 
         NotifySpawnListeners(spawnedPlayer);
@@ -120,7 +152,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
     {
         if (PhotonNetwork.InRoom == false)
         {
-            Debug.LogError("GameplayPlayerSpawner: Multiplayer spawn requested, but client is not in a Photon room.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Multiplayer spawn requested, but client is not in a Photon room.", this);
+            }
             return;
         }
 
@@ -128,7 +163,11 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (targetEntry == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Target character entry was not found.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Target character entry was not found.", this);
+            }
+            
             return;
         }
 
@@ -136,7 +175,11 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(prefabName))
         {
-            Debug.LogError("GameplayPlayerSpawner: Multiplayer prefab name is missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Multiplayer prefab name is missing.", this);
+            }
+            
             return;
         }
 
@@ -144,7 +187,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (selectedPlatform == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: No available spawn platform found for multiplayer.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: No available spawn platform found for multiplayer.", this);
+            }
             return;
         }
 
@@ -152,7 +198,11 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (spawnPoint == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Selected multiplayer spawn point is null.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+
+                Debug.LogError("GameplayPlayerSpawner: Selected multiplayer spawn point is null.", this);
+            }
             return;
         }
 
@@ -170,7 +220,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (spawnedPlayer == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: PhotonNetwork.Instantiate returned null.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: PhotonNetwork.Instantiate returned null.", this);
+            }
             return;
         }
 
@@ -178,7 +231,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (photonView == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: PhotonView was not found on spawned multiplayer player.", spawnedPlayer);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: PhotonView was not found on spawned multiplayer player.", spawnedPlayer);
+            }
             return;
         }
 
@@ -189,12 +245,16 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
         if (logSpawnFlow)
         {
-            Debug.Log(
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log(
                 "GameplayPlayerSpawner: Spawned multiplayer character " +
                 RuntimeOptions.ConfirmedCharacter +
                 " with ActorNumber " + PhotonNetwork.LocalPlayer.ActorNumber +
                 " using prefab " + prefabName,
                 this);
+            }
+
         }
     }
 
@@ -208,13 +268,20 @@ public class GameplayPlayerSpawner : MonoBehaviour
             return selectedEntry;
         }
 
-        Debug.LogWarning("GameplayPlayerSpawner: Selected character entry was not found. Fallback will be used.", this);
+        if (RuntimeOptions.LoggingWarning)
+        {
+            Debug.LogWarning("GameplayPlayerSpawner: Selected character entry was not found. Fallback will be used.", this);
+        }
 
         CharacterPrefabEntry fallbackEntry = GetEntryByCharacterType(fallbackCharacterType);
 
         if (fallbackEntry == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Fallback character entry was not found.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Fallback character entry was not found.", this);
+            }
+
             return null;
         }
 
@@ -304,7 +371,10 @@ public class GameplayPlayerSpawner : MonoBehaviour
     {
         if (playerInstance == null)
         {
-            Debug.LogError("GameplayPlayerSpawner: Cannot notify spawn listeners because player instance is null.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("GameplayPlayerSpawner: Cannot notify spawn listeners because player instance is null.", this);
+            }
             return;
         }
 

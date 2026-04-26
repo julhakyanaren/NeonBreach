@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(WwiseGameplaySFXController))]
-public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
+public class PlayerProjectile : MonoBehaviour, IPlayerProjectile, IPunInstantiateMagicCallback
 {
     [System.Serializable]
     public class ImpactVfxEntry
@@ -33,7 +34,7 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     [Header("Lifetime Settings")]
     [Tooltip("How long the projectile exists before being returned to the pool.")]
     [Range(0.5f, 10f)]
-    [SerializeField] private float lifeTime = 3f;    
+    [SerializeField] private float lifeTime = 3f;
 
     [Header("References")]
     [Tooltip("Reference of the WwiseGameplaySFXController script.")]
@@ -42,6 +43,10 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     [Tooltip("Cached Rigidbody component of the projectile.")]
     [SerializeField] private Rigidbody projectileRigidbody;
 
+    [Header("Networking")]
+    [Tooltip("PhotonView used for multiplayer RPC calls.")]
+    [SerializeField] private PhotonView photonView;
+
     [Header("VFX Settings")]
     [Tooltip("All mapped impact VFX prefabs.")]
     [SerializeField] private List<ImpactVfxEntry> impactVfxEntries = new List<ImpactVfxEntry>();
@@ -49,14 +54,18 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     [Tooltip("Current impact VFX type used by this projectile.")]
     [SerializeField] private ImpactVFXType impactVfxType = ImpactVFXType.CyanEnergy;
 
-    [Tooltip("Offset applied to impact VFX along hit direction, when hit not an enemy")]
+    [Tooltip("Boosted impact VFX type used by this projectile.")]
+    [SerializeField] private ImpactVFXType impactBoostedVfxType = ImpactVFXType.BoostedEnergy;
+
+    [Tooltip("Offset applied to impact VFX along hit direction, when hit enemy.")]
     [Range(0f, 0.5f)]
     [SerializeField] private float impactOffsetEnemy = 0.05f;
 
-    [Tooltip("Offset applied to impact VFX along hit direction, when hit enemy")]
+    [Tooltip("Offset applied to impact VFX along hit direction, when hit not enemy.")]
     [Range(0f, 0.5f)]
     [SerializeField] private float impactOffsetArena = 0.05f;
 
+    [Header("Trail Settings")]
     [Tooltip("Does this projectile use trail renderers.")]
     [SerializeField] private bool hasTrail;
 
@@ -69,6 +78,10 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     [Header("Trail State")]
     [Tooltip("Is boosted trail currently active for this projectile.")]
     [SerializeField] private bool isBoostedTrailActive;
+
+    [Header("Runtime")]
+    [Tooltip("Prevents duplicate hit processing.")]
+    [SerializeField] private bool hasProcessedHit;
 
     private Vector3 moveDirection;
     private float currentLifeTimer;
@@ -131,10 +144,16 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     {
         projectileRigidbody = GetComponent<Rigidbody>();
         gameplaySfxController = GetComponent<WwiseGameplaySFXController>();
+        photonView = GetComponent<PhotonView>();
     }
 
     private void Awake()
     {
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
         if (projectileRigidbody == null)
         {
             projectileRigidbody = GetComponent<Rigidbody>();
@@ -168,6 +187,7 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     private void OnEnable()
     {
         currentLifeTimer = LifeTime;
+        hasProcessedHit = false;
 
         ClearTrails();
         ApplyTrailVisualState();
@@ -194,6 +214,8 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
 
     private void OnDisable()
     {
+        hasProcessedHit = false;
+
         if (projectileRigidbody != null)
         {
             projectileRigidbody.velocity = Vector3.zero;
@@ -252,6 +274,7 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     public void SetBoostedTrailState(bool boosted)
     {
         isBoostedTrailActive = boosted;
+
         ClearTrails();
         ApplyTrailVisualState();
     }
@@ -303,6 +326,31 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
 
     private void OnTriggerEnter(Collider other)
     {
+        if (hasProcessedHit)
+        {
+            return;
+        }
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView == null)
+            {
+                return;
+            }
+
+            if (!photonView.IsMine)
+            {
+                return;
+            }
+        }
+
+        if (other.isTrigger && !other.CompareTag("EnemyHitbox"))
+        {
+            return;
+        }
+
+        hasProcessedHit = true;
+
         Vector3 impactForward = -transform.forward;
         Vector3 impactPosition = transform.position + impactForward * impactOffsetArena;
 
@@ -319,21 +367,34 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
                     stats.AddHit();
                 }
 
-                damageable.ApplyDamage(Damage, owner);
+                if (RuntimeOptions.MultiplayerMode)
+                {
+                    PhotonView targetView = other.GetComponentInParent<PhotonView>();
+
+                    if (targetView != null && photonView != null && photonView.IsMine)
+                    {
+                        photonView.RPC(
+                            nameof(ApplyDamage_RPC),
+                            RpcTarget.All,
+                            targetView.ViewID,
+                            Damage
+                        );
+                    }
+                }
+                else
+                {
+                    damageable.ApplyDamage(Damage, owner);
+                }
             }
 
             if (gameplaySfxController != null)
             {
                 gameplaySfxController.PlayRandomHit(gameObject);
             }
-            impactPosition = transform.position + impactForward * impactOffsetEnemy;
-            SpawnImpactVfx(impactPosition, impactForward);
-            DisableProjectile();
-            return;
-        }
 
-        if (other.isTrigger)
-        {
+            impactPosition = transform.position + impactForward * impactOffsetEnemy;
+            SpawnImpactNetworked(impactPosition, impactForward);
+            DisableProjectile();
             return;
         }
 
@@ -342,24 +403,81 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
             gameplaySfxController.PlayRandomHit(gameObject);
         }
 
-        SpawnImpactVfx(impactPosition, impactForward);
+        SpawnImpactNetworked(impactPosition, impactForward);
         DisableProjectile();
     }
 
-    private void SpawnImpactVfx(Vector3 position, Vector3 forwardDirection)
+    private void SpawnImpactNetworked(Vector3 position, Vector3 forwardDirection)
+    {
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView != null && photonView.IsMine)
+            {
+                photonView.RPC(
+                    "SpawnImpactVfx_RPC",
+                    RpcTarget.All,
+                    position,
+                    forwardDirection,
+                    isBoostedTrailActive);
+            }
+
+            return;
+        }
+
+        SpawnImpactVfxInternal(position, forwardDirection, isBoostedTrailActive);
+    }
+
+    [PunRPC]
+    private void SpawnImpactVfx_RPC(Vector3 position, Vector3 forwardDirection, bool boosted)
+    {
+        SpawnImpactVfxInternal(position, forwardDirection, boosted);
+    }
+
+    [PunRPC]
+    private void ApplyDamage_RPC(int viewID, float damage)
+    {
+        PhotonView targetView = PhotonView.Find(viewID);
+
+        if (targetView == null)
+        {
+            return;
+        }
+
+        IDamageable damageable = targetView.GetComponent<IDamageable>();
+
+        if (damageable == null)
+        {
+            return;
+        }
+
+        damageable.ApplyDamage(damage, owner);
+    }
+
+    private void SpawnImpactVfxInternal(Vector3 position, Vector3 forwardDirection, bool boosted)
     {
         if (impactVfxMap == null || impactVfxMap.Count == 0)
         {
             return;
         }
 
-        if (!impactVfxMap.ContainsKey(impactVfxType))
-        {
-            Debug.LogWarning("PlayerProjectile: No impact VFX mapped for " + impactVfxType, this);
-            return;
-        }
+        GameObject impactPrefab;
 
-        GameObject impactPrefab = impactVfxMap[impactVfxType];
+        if (boosted)
+        {
+            if (!impactVfxMap.TryGetValue(impactBoostedVfxType, out impactPrefab))
+            {
+                Debug.LogWarning("PlayerProjectile: No impact VFX mapped for " + impactBoostedVfxType, this);
+                return;
+            }
+        }
+        else
+        {
+            if (!impactVfxMap.TryGetValue(impactVfxType, out impactPrefab))
+            {
+                Debug.LogWarning("PlayerProjectile: No impact VFX mapped for " + impactVfxType, this);
+                return;
+            }
+        }
 
         if (impactPrefab == null)
         {
@@ -373,7 +491,22 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
     public void DisableProjectile()
     {
         owner = null;
+        hasProcessedHit = false;
         ClearTrails();
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView != null)
+            {
+                if (photonView.IsMine)
+                {
+                    PhotonNetwork.Destroy(gameObject);
+                }
+            }
+
+            return;
+        }
+
         gameObject.SetActive(false);
     }
 
@@ -403,5 +536,36 @@ public class PlayerProjectile : MonoBehaviour, IPlayerProjectile
 
         projectileConfig = config;
         ApplyConfig();
+    }
+
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        object[] data = photonView.InstantiationData;
+
+        if (data == null)
+        {
+            return;
+        }
+
+        if (data.Length < 2)
+        {
+            return;
+        }
+
+        Vector3 direction = (Vector3)data[0];
+        bool boosted = (bool)data[1];
+
+        SetBoostedTrailState(boosted);
+        Launch(direction);
     }
 }

@@ -1,9 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
+using Photon.Realtime;
 using UnityEngine;
+using ExitGames.Client.Photon;
 
-public class WaveManager : MonoBehaviour
+public class WaveManager : MonoBehaviourPunCallbacks
 {
     public event Action<int> WaveStarted;
     public event Action<int> WaveCompleted;
@@ -74,7 +77,10 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private int aliveEnemiesCount;
 
     private Coroutine waveLoopCoroutine;
+    private Coroutine waitForWavePropertyCoroutine;
     private readonly List<EnemyDeathNotifier> aliveEnemies = new List<EnemyDeathNotifier>();
+
+    private const string CurrentWaveIndexRoomKey = "CurrentWaveIndex";
 
     public int CurrentWave
     {
@@ -125,21 +131,164 @@ public class WaveManager : MonoBehaviour
         fireRateMultiplierPerWave = Mathf.Max(0f, fireRateMultiplierPerWave);
         maxFireRateMultiplier = Mathf.Max(1f, maxFireRateMultiplier);
 
+        scoreMultiplierPerWave = Mathf.Max(0f, scoreMultiplierPerWave);
+        maxScoreMultiplier = Mathf.Max(1f, maxScoreMultiplier);
+
         currentWaveIndex = startingWaveIndex - 1;
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        LoadCurrentWaveFromRoom();
+
         if (!autoStart)
+        {
+            yield break;
+        }
+
+        if (CanRunWaveAuthority())
+        {
+            StartWaveLoop();
+            yield break;
+        }
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            waitForWavePropertyCoroutine = StartCoroutine(WaitForWaveRoomPropertyRoutine());
+        }
+    }
+
+    private IEnumerator WaitForWaveRoomPropertyRoutine()
+    {
+        float timer = 0f;
+        float timeout = 5f;
+
+        while (timer < timeout)
+        {
+            LoadCurrentWaveFromRoom();
+
+            if (currentWaveIndex > 0)
+            {
+                waitForWavePropertyCoroutine = null;
+                yield break;
+            }
+
+            timer += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        waitForWavePropertyCoroutine = null;
+
+        if (RuntimeOptions.LoggingWarning)
+        {
+            Debug.LogWarning("WaveManager: Non-master client did not receive CurrentWaveIndex room property in time.", this);
+        }
+    }
+
+    private void SaveCurrentWaveToRoom()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
         {
             return;
         }
-        StartWaveLoop();
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return;
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return;
+        }
+
+        ExitGames.Client.Photon.Hashtable roomProperties = new ExitGames.Client.Photon.Hashtable();
+        roomProperties[CurrentWaveIndexRoomKey] = currentWaveIndex;
+
+        PhotonNetwork.CurrentRoom.SetCustomProperties(roomProperties);
+    }
+
+    private void LoadCurrentWaveFromRoom()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.CurrentRoom == null)
+        {
+            return;
+        }
+
+        if (!PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(CurrentWaveIndexRoomKey))
+        {
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("WaveManager: Room has no CurrentWaveIndex property yet.", this);
+            }
+
+            return;
+        }
+
+        object waveValue = PhotonNetwork.CurrentRoom.CustomProperties[CurrentWaveIndexRoomKey];
+
+        if (waveValue is int)
+        {
+            int newWaveIndex = (int)waveValue;
+
+            if (currentWaveIndex == newWaveIndex)
+            {
+                return;
+            }
+
+            currentWaveIndex = newWaveIndex;
+            NotifyWaveChanged();
+        }
+    }
+
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (!propertiesThatChanged.ContainsKey(CurrentWaveIndexRoomKey))
+        {
+            return;
+        }
+
+        object waveValue = propertiesThatChanged[CurrentWaveIndexRoomKey];
+
+        if (waveValue is int)
+        {
+            int newWaveIndex = (int)waveValue;
+
+            if (currentWaveIndex == newWaveIndex)
+            {
+                return;
+            }
+
+            currentWaveIndex = newWaveIndex;
+            NotifyWaveChanged();
+        }
     }
 
     public void StartWaveLoop()
     {
         if (waveLoopCoroutine != null)
+        {
+            return;
+        }
+
+        if (!CanRunWaveAuthority())
         {
             return;
         }
@@ -159,6 +308,26 @@ public class WaveManager : MonoBehaviour
         isWaveRunning = false;
     }
 
+    private bool CanRunWaveAuthority()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return true;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return false;
+        }
+
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private IEnumerator WaveLoop()
     {
         if (startDelay > 0f)
@@ -166,22 +335,36 @@ public class WaveManager : MonoBehaviour
             yield return new WaitForSeconds(startDelay);
         }
 
-        while (true)
+        while (CanRunWaveAuthority())
         {
             currentWaveIndex++;
+            SaveCurrentWaveToRoom();
             NotifyWaveChanged();
 
             yield return StartCoroutine(RunWave(currentWaveIndex));
+
+            if (!CanRunWaveAuthority())
+            {
+                break;
+            }
 
             if (timeBetweenWaves > 0f)
             {
                 yield return new WaitForSeconds(timeBetweenWaves);
             }
         }
+
+        waveLoopCoroutine = null;
+        isWaveRunning = false;
     }
 
     private IEnumerator RunWave(int waveIndex)
     {
+        if (!CanRunWaveAuthority())
+        {
+            yield break;
+        }
+
         isWaveRunning = true;
 
         int enemyCount = GetEnemyCountForWave(waveIndex);
@@ -192,13 +375,21 @@ public class WaveManager : MonoBehaviour
             WaveStarted.Invoke(waveIndex);
         }
 
-        Debug.Log($"Wave {waveIndex} started. Enemy count: {enemyCount}");
-        Debug.Log($"Wave {waveIndex} scaling: HP x{scalingData.HealthMultiplier}, DMG x{scalingData.DamageMultiplier}");
+        if (RuntimeOptions.Logging)
+        {
+            Debug.Log($"Wave {waveIndex} started. Enemy count: {enemyCount}");
+            Debug.Log($"Wave {waveIndex} scaling: HP x{scalingData.HealthMultiplier}, DMG x{scalingData.DamageMultiplier}");
+        }
 
         List<Vector3> spawnPositions = GenerateSpawnPositionsForWave(enemyCount);
 
         for (int i = 0; i < spawnPositions.Count; i++)
         {
+            if (!CanRunWaveAuthority())
+            {
+                yield break;
+            }
+
             Vector3 spawnPosition = spawnPositions[i];
 
             if (enemySpawner != null)
@@ -215,6 +406,11 @@ public class WaveManager : MonoBehaviour
 
         while (aliveEnemiesCount > 0)
         {
+            if (!CanRunWaveAuthority())
+            {
+                yield break;
+            }
+
             yield return null;
         }
 
@@ -279,7 +475,11 @@ public class WaveManager : MonoBehaviour
     {
         if (spawnPositionGenerator == null)
         {
-            Debug.LogWarning($"{name}: WaveManager has no SpawnPositionGenerator assigned.");
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning($"{name}: WaveManager has no SpawnPositionGenerator assigned.");
+            }
+
             return new List<Vector3>();
         }
 
@@ -298,7 +498,11 @@ public class WaveManager : MonoBehaviour
 
         if (deathNotifier == null)
         {
-            Debug.LogWarning($"{name}: Spawned enemy '{spawnedEnemy.name}' has no EnemyDeathNotifier.");
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning($"{name}: Spawned enemy '{spawnedEnemy.name}' has no EnemyDeathNotifier.");
+            }
+
             return;
         }
 
@@ -338,8 +542,62 @@ public class WaveManager : MonoBehaviour
         aliveEnemiesCount = aliveEnemies.Count;
     }
 
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.LocalPlayer == null)
+        {
+            return;
+        }
+
+        if (newMasterClient == null)
+        {
+            return;
+        }
+
+        if (PhotonNetwork.LocalPlayer.ActorNumber == newMasterClient.ActorNumber)
+        {
+            if (autoStart)
+            {
+                StartWaveLoop();
+            }
+        }
+        else
+        {
+            StopWaveLoop();
+
+            if (waitForWavePropertyCoroutine == null)
+            {
+                waitForWavePropertyCoroutine = StartCoroutine(WaitForWaveRoomPropertyRoutine());
+            }
+        }
+    }
+
+    public override void OnLeftRoom()
+    {
+        StopWaveLoop();
+
+        if (waitForWavePropertyCoroutine != null)
+        {
+            StopCoroutine(waitForWavePropertyCoroutine);
+            waitForWavePropertyCoroutine = null;
+        }
+    }
+
     private void OnDestroy()
     {
+        StopWaveLoop();
+
+        if (waitForWavePropertyCoroutine != null)
+        {
+            StopCoroutine(waitForWavePropertyCoroutine);
+            waitForWavePropertyCoroutine = null;
+        }
+
         for (int i = 0; i < aliveEnemies.Count; i++)
         {
             EnemyDeathNotifier notifier = aliveEnemies[i];

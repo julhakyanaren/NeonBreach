@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(WwiseEnemySFXController))]
@@ -45,15 +46,22 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
     [Range(0.1f, 20f)]
     [SerializeField] private float reloadDuration = 5f;
 
-    [Header("Projectile Settings")]
-    [Tooltip("Projectile pool used to get enemy projectiles.")]
+    [Header("Singleplayer Projectile Settings")]
+    [Tooltip("Projectile pool used to get enemy projectiles in singleplayer.")]
     [SerializeField] private HotshotProjectilePool projectilePool;
 
     [Tooltip("Transform used as projectile spawn point.")]
     [SerializeField] private Transform firePoint;
 
+    [Header("Multiplayer Projectile Settings")]
+    [Tooltip("Resources path to Hotshot projectile PUN prefab.")]
+    [SerializeField] private string photonProjectilePrefabPath = "PhotonPrefabs/Projectiles_PUN/HotshotProjectile_PUN";
+
+    [Tooltip("If enabled, muzzle VFX is spawned through Photon in multiplayer.")]
+    [SerializeField] private bool spawnPhotonMuzzleVfx = true;
+
     [Header("Muzzle VFX")]
-    [Tooltip("All mapped muzzle VFX prefabs.")]
+    [Tooltip("All mapped muzzle VFX prefabs for singleplayer.")]
     [SerializeField] private List<MuzzleVFXEntry> muzzleVfxEntries = new List<MuzzleVFXEntry>();
 
     [Tooltip("Current muzzle VFX type used by Hotshot.")]
@@ -122,6 +130,7 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
     [Tooltip("Target used for manual test shot.")]
     [SerializeField] private Transform testTarget;
 
+    private PhotonView photonView;
     private float nextFireTime;
     private float baseShotsPerMinute;
     private Dictionary<MuzzleVFXType, GameObject> muzzleVfxMap;
@@ -254,6 +263,8 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
 
     private void Awake()
     {
+        photonView = GetComponent<PhotonView>();
+
         if (ProjectilePool == null)
         {
             ProjectilePool = FindAnyObjectByType<HotshotProjectilePool>();
@@ -316,6 +327,11 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
         }
 
         UpdateAnimationCoefficients();
+
+        if (testShot)
+        {
+            StartCoroutine(TestShoot());
+        }
     }
 
     public void SetDeadState(bool value)
@@ -336,6 +352,14 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
 
     public bool TryShoot(Transform target)
     {
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return false;
+            }
+        }
+
         if (target == null)
         {
             return false;
@@ -352,20 +376,58 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
             return false;
         }
 
-        if (projectilePool == null)
-        {
-            Debug.LogWarning("HotshotShooter: Projectile Pool is not assigned.", this);
-            return false;
-        }
-
         if (firePoint == null)
         {
-            Debug.LogWarning("HotshotShooter: Fire Point is not assigned.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("HotshotShooter: Fire Point is not assigned.", this);
+            }
             return false;
         }
 
         if (!IsFacingTarget(target))
         {
+            return false;
+        }
+
+        bool shootResult = false;
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            shootResult = TryShootMultiplayer();
+        }
+        else
+        {
+            shootResult = TryShootSingleplayer();
+        }
+
+        if (!shootResult)
+        {
+            return false;
+        }
+
+        CurrentAmmo--;
+
+        PlayShotFeedback();
+
+        nextFireTime = Time.time + GetFireCooldown();
+
+        if (CurrentAmmo <= 0)
+        {
+            StartReload();
+        }
+
+        return true;
+    }
+
+    private bool TryShootSingleplayer()
+    {
+        if (projectilePool == null)
+        {
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("HotshotShooter: Projectile Pool is not assigned.", this);
+            }
             return false;
         }
 
@@ -379,10 +441,69 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
         projectile.SetActive(true);
 
         ResetProjectile(projectile);
-        SpawnMuzzleVfx();
+        SpawnMuzzleVfxSingleplayer();
 
-        CurrentAmmo--;
+        return true;
+    }
 
+    private bool TryShootMultiplayer()
+    {
+        if (string.IsNullOrWhiteSpace(photonProjectilePrefabPath))
+        {
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("HotshotShooter: Photon projectile prefab path is empty.", this);
+            }
+
+            return false;
+        }
+
+        if (firePoint == null)
+        {
+            return false;
+        }
+
+        Vector3 shootDirection = firePoint.forward;
+
+        object[] instantiateData = new object[]
+        {
+        shootDirection
+        };
+
+        GameObject projectile = PhotonNetwork.InstantiateRoomObject(
+            photonProjectilePrefabPath,
+            firePoint.position,
+            Quaternion.LookRotation(shootDirection),
+            0,
+            instantiateData
+        );
+
+        if (projectile == null)
+        {
+            return false;
+        }
+
+        HotshotProjectile hotshotProjectile = projectile.GetComponent<HotshotProjectile>();
+
+        if (hotshotProjectile != null && hotshotController != null)
+        {
+            hotshotProjectile.SetDamageMultiplier(hotshotController.GetProjectileDamageMultiplier());
+        }
+
+        IEnemyProjectile enemyProjectile = projectile.GetComponent<IEnemyProjectile>();
+
+        if (enemyProjectile != null)
+        {
+            enemyProjectile.Launch(shootDirection);
+        }
+
+        SpawnMuzzleVfxMultiplayer();
+
+        return true;
+    }
+
+    private void PlayShotFeedback()
+    {
         if (playShotAnimation)
         {
             PlayShotAnimation();
@@ -390,18 +511,36 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
 
         PostShotSfx();
 
-        nextFireTime = Time.time + GetFireCooldown();
-
-        if (CurrentAmmo <= 0)
+        if (PhotonNetwork.InRoom == true)
         {
-            StartReload();
+            if (photonView != null)
+            {
+                photonView.RPC(nameof(RPC_PlayShotFeedback), RpcTarget.Others);
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_PlayShotFeedback()
+    {
+        if (playShotAnimation)
+        {
+            PlayShotAnimation();
         }
 
-        return true;
+        PostShotSfx();
     }
 
     public void StartReload()
     {
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (PhotonNetwork.IsMasterClient == false)
+            {
+                return;
+            }
+        }
+
         if (!canShoot)
         {
             return;
@@ -593,7 +732,10 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
 
             if (entry.muzzleVfxPrefab == null)
             {
-                Debug.LogWarning("HotshotShooter: Missing muzzle VFX prefab for " + entry.muzzleVfxType, this);
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning("HotshotShooter: Missing muzzle VFX prefab for " + entry.muzzleVfxType, this);
+                }
                 continue;
             }
 
@@ -603,12 +745,15 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
             }
             else
             {
-                Debug.LogWarning("HotshotShooter: Duplicate muzzle VFX mapping for " + entry.muzzleVfxType, this);
+                if (RuntimeOptions.LoggingWarning)
+                {
+                    Debug.LogWarning("HotshotShooter: Duplicate muzzle VFX mapping for " + entry.muzzleVfxType, this);
+                }
             }
         }
     }
 
-    private void SpawnMuzzleVfx()
+    private void SpawnMuzzleVfxSingleplayer()
     {
         if (muzzleVfxMap == null || muzzleVfxMap.Count == 0)
         {
@@ -624,7 +769,10 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
 
         if (!muzzleVfxMap.TryGetValue(muzzleVfxType, out muzzlePrefab))
         {
-            Debug.LogWarning("HotshotShooter: No muzzle VFX mapped for " + muzzleVfxType, this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("HotshotShooter: No muzzle VFX mapped for " + muzzleVfxType, this);
+            }
             return;
         }
 
@@ -639,6 +787,60 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
         Instantiate(muzzlePrefab, spawnPosition, spawnRotation);
     }
 
+    [PunRPC]
+    private void RPC_SpawnMuzzleVfx(Vector3 position, Quaternion rotation)
+    {
+        if (muzzleVfxMap == null || muzzleVfxMap.Count == 0)
+        {
+            return;
+        }
+
+        GameObject muzzlePrefab;
+
+        if (!muzzleVfxMap.TryGetValue(muzzleVfxType, out muzzlePrefab))
+        {
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("HotshotShooter: No muzzle VFX mapped for " + muzzleVfxType, this);
+            }
+            return;
+        }
+
+        if (muzzlePrefab == null)
+        {
+            return;
+        }
+
+        Instantiate(muzzlePrefab, position, rotation);
+    }
+
+    private void SpawnMuzzleVfxMultiplayer()
+    {
+        if (!spawnPhotonMuzzleVfx)
+        {
+            return;
+        }
+
+        if (firePoint == null)
+        {
+            return;
+        }
+
+        if (photonView == null)
+        {
+            return;
+        }
+
+        Vector3 spawnPosition = firePoint.position + firePoint.forward * muzzleOffset;
+        Quaternion spawnRotation = firePoint.rotation;
+
+        photonView.RPC(
+            nameof(RPC_SpawnMuzzleVfx),
+            RpcTarget.All,
+            spawnPosition,
+            spawnRotation);
+    }
+
     public void SetMuzzleVfxType(MuzzleVFXType newMuzzleVfxType)
     {
         muzzleVfxType = newMuzzleVfxType;
@@ -648,14 +850,53 @@ public class HotshotShooter : MonoBehaviour, IWaveScalable
     {
         reloading = true;
 
-        PostReloadPlaySfx();
-        PlayReload();
+        PlayReloadFeedback();
 
         yield return new WaitForSeconds(reloadDuration);
 
         CurrentAmmo = MagazineSize;
         reloading = false;
 
+        StopReloadFeedback();
+    }
+
+    private void PlayReloadFeedback()
+    {
+        PostReloadPlaySfx();
+        PlayReload();
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (photonView != null)
+            {
+                photonView.RPC(nameof(RPC_PlayReloadFeedback), RpcTarget.Others);
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_PlayReloadFeedback()
+    {
+        PostReloadPlaySfx();
+        PlayReload();
+    }
+
+    private void StopReloadFeedback()
+    {
+        StopReloadSfx();
+
+        if (PhotonNetwork.InRoom == true)
+        {
+            if (photonView != null)
+            {
+                photonView.RPC(nameof(RPC_StopReloadFeedback), RpcTarget.Others);
+            }
+        }
+    }
+
+    [PunRPC]
+    private void RPC_StopReloadFeedback()
+    {
         StopReloadSfx();
     }
 

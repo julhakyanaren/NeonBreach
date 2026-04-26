@@ -52,6 +52,8 @@ public class PlayerRotation : MonoBehaviour
     private Vector2 lookInput;
     private Vector2 pointerScreenPosition;
 
+    private bool ownsRotationInput;
+
     private void Reset()
     {
         if (mainCamera == null)
@@ -97,39 +99,54 @@ public class PlayerRotation : MonoBehaviour
 
     private void OnEnable()
     {
+        ownsRotationInput = false;
 
-        if (lookAction != null)
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return;
+        }
+
+        if (lookAction != null && lookAction.action != null)
         {
             lookAction.action.Enable();
         }
 
-        if (pointerPositionAction != null)
+        if (pointerPositionAction != null && pointerPositionAction.action != null)
         {
             pointerPositionAction.action.Enable();
         }
 
-        if (rotateAction != null)
+        if (rotateAction != null && rotateAction.action != null)
         {
             rotateAction.action.Enable();
         }
+
+        ownsRotationInput = true;
     }
 
     private void OnDisable()
     {
-        if (lookAction != null)
+        if (ownsRotationInput == false)
+        {
+            return;
+        }
+
+        if (lookAction != null && lookAction.action != null)
         {
             lookAction.action.Disable();
         }
 
-        if (pointerPositionAction != null)
+        if (pointerPositionAction != null && pointerPositionAction.action != null)
         {
             pointerPositionAction.action.Disable();
         }
 
-        if (rotateAction != null)
+        if (rotateAction != null && rotateAction.action != null)
         {
             rotateAction.action.Disable();
         }
+
+        ownsRotationInput = false;
     }
 
     private void Update()

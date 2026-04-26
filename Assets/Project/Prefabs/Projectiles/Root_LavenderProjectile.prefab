@@ -370,7 +370,11 @@ MonoBehaviour:
   - impactVfxType: 1
     impactVfxPrefab: {fileID: 1608545683900669860, guid: 7a9ab44b41705684fa1d003c22d01f51,
       type: 3}
+  - impactVfxType: 2
+    impactVfxPrefab: {fileID: 1608545683900669860, guid: 2952c32061ea95846bb1cb36e7eebe84,
+      type: 3}
   impactVfxType: 1
+  impactBoostedVfxType: 2
   impactOffsetEnemy: 0.15
   impactOffsetArena: 0.5
   hasTrail: 1

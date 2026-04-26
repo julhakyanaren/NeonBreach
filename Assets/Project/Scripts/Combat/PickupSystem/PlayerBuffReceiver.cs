@@ -1,4 +1,5 @@
 using System.Collections;
+using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerHealth))]
@@ -22,6 +23,9 @@ public class PlayerBuffReceiver : MonoBehaviour
 
     [Tooltip("Reference to the player projectile pool.")]
     [SerializeField] private PlayerProjectilePool playerProjectilePool;
+
+    [Tooltip("PhotonView used to check local ownership in multiplayer.")]
+    [SerializeField] private PhotonView photonView;
 
     [Header("Damage State")]
     [Tooltip("Is damage buff currently active.")]
@@ -133,6 +137,11 @@ public class PlayerBuffReceiver : MonoBehaviour
             playerShooter = GetComponent<PlayerShooter>();
         }
 
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
         if (playerProjectilePool == null)
         {
             playerProjectilePool = FindFirstObjectByType<PlayerProjectilePool>();
@@ -145,11 +154,42 @@ public class PlayerBuffReceiver : MonoBehaviour
         playerMovement = GetComponent<PlayerMovement>();
         playerRotation = GetComponent<PlayerRotation>();
         playerShooter = GetComponent<PlayerShooter>();
+        photonView = GetComponent<PhotonView>();
         playerProjectilePool = FindFirstObjectByType<PlayerProjectilePool>();
+    }
+
+    private bool CanApplyLocalBuff()
+    {
+        if (!RuntimeOptions.MultiplayerMode)
+        {
+            return true;
+        }
+
+        if (!PhotonNetwork.InRoom)
+        {
+            return true;
+        }
+
+        if (photonView == null)
+        {
+            return false;
+        }
+
+        if (!photonView.IsMine)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public void ApplyHealth(float amount)
     {
+        if (!CanApplyLocalBuff())
+        {
+            return;
+        }
+
         if (playerHealth == null)
         {
             return;
@@ -160,6 +200,11 @@ public class PlayerBuffReceiver : MonoBehaviour
 
     public void ApplyDefense(float multiplier, float duration)
     {
+        if (!CanApplyLocalBuff())
+        {
+            return;
+        }
+
         if (playerHealth == null)
         {
             return;
@@ -204,6 +249,11 @@ public class PlayerBuffReceiver : MonoBehaviour
 
     public void ApplySpeed(float multiplier, float duration)
     {
+        if (!CanApplyLocalBuff())
+        {
+            return;
+        }
+
         if (duration <= 0f)
         {
             return;
@@ -256,7 +306,7 @@ public class PlayerBuffReceiver : MonoBehaviour
 
     public void ApplyDamage(float multiplier, float duration)
     {
-        if (playerProjectilePool == null)
+        if (!CanApplyLocalBuff())
         {
             return;
         }
@@ -272,8 +322,15 @@ public class PlayerBuffReceiver : MonoBehaviour
 
         isDamageBoostActive = true;
 
-        playerProjectilePool.SetProjectileDamageMultiplier(currentDamageMultiplier);
-        playerProjectilePool.SetBoostedTrailState(true);
+        if (playerProjectilePool != null)
+        {
+            playerProjectilePool.SetProjectileDamageMultiplier(currentDamageMultiplier);
+        }
+
+        if (playerShooter != null)
+        {
+            playerShooter.SetBoostedProjectileTrailState(true);
+        }
 
         if (damageCoroutine == null)
         {
@@ -297,7 +354,11 @@ public class PlayerBuffReceiver : MonoBehaviour
         if (playerProjectilePool != null)
         {
             playerProjectilePool.ResetProjectileDamage();
-            playerProjectilePool.SetBoostedTrailState(false);
+        }
+
+        if (playerShooter != null)
+        {
+            playerShooter.SetBoostedProjectileTrailState(false);
         }
 
         damageCoroutine = null;
@@ -305,6 +366,11 @@ public class PlayerBuffReceiver : MonoBehaviour
 
     public void ApplyFireRate(float multiplier, float duration)
     {
+        if (!CanApplyLocalBuff())
+        {
+            return;
+        }
+
         if (playerShooter == null)
         {
             return;
@@ -347,5 +413,82 @@ public class PlayerBuffReceiver : MonoBehaviour
         }
 
         fireRateCoroutine = null;
+    }
+
+    public void ResetAllBuffs()
+    {
+        if (!CanApplyLocalBuff())
+        {
+            return;
+        }
+
+        if (defenseCoroutine != null)
+        {
+            StopCoroutine(defenseCoroutine);
+            defenseCoroutine = null;
+        }
+
+        if (speedCoroutine != null)
+        {
+            StopCoroutine(speedCoroutine);
+            speedCoroutine = null;
+        }
+
+        if (damageCoroutine != null)
+        {
+            StopCoroutine(damageCoroutine);
+            damageCoroutine = null;
+        }
+
+        if (fireRateCoroutine != null)
+        {
+            StopCoroutine(fireRateCoroutine);
+            fireRateCoroutine = null;
+        }
+
+        defenseRemainingTime = 0f;
+        defenseDuration = 0f;
+        currentDefenseMultiplier = 1f;
+
+        speedRemainingTime = 0f;
+        speedDuration = 0f;
+        currentSpeedMultiplier = 1f;
+
+        damageRemainingTime = 0f;
+        damageDuration = 0f;
+        currentDamageMultiplier = 1f;
+        isDamageBoostActive = false;
+
+        fireRateRemainingTime = 0f;
+        fireRateDuration = 0f;
+        currentFireRateMultiplier = 1f;
+
+        if (playerHealth != null)
+        {
+            playerHealth.ResetDamageMultiplier();
+        }
+
+        if (playerMovement != null)
+        {
+            playerMovement.ResetSpeedMultiplier();
+            playerMovement.ClearExternalPush();
+        }
+
+        if (playerRotation != null)
+        {
+            playerRotation.ResetRotationMultiplier();
+        }
+
+        if (playerProjectilePool != null)
+        {
+            playerProjectilePool.ResetProjectileDamage();
+        }
+
+        if (playerShooter != null)
+        {
+            playerShooter.ResetFireRateMultiplier();
+            playerShooter.ResetReloadMultiplier();
+            playerShooter.SetBoostedProjectileTrailState(false);
+        }
     }
 }

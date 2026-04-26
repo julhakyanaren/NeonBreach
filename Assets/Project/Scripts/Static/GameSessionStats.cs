@@ -27,7 +27,10 @@ public class GameSessionStats : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning("GameSessionStats: Duplicate instance detected. Destroying duplicate.", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("GameSessionStats: Duplicate instance detected. Destroying duplicate.", this);
+            }
             Destroy(gameObject);
             return;
         }
@@ -37,7 +40,10 @@ public class GameSessionStats : MonoBehaviour
 
         if (logLifecycle)
         {
-            Debug.Log("GameSessionStats: Initialized.", this);
+            if (RuntimeOptions.Logging)
+            {
+                Debug.Log("GameSessionStats: Initialized.", this);
+            }
         }
     }
 
@@ -97,7 +103,10 @@ public class GameSessionStats : MonoBehaviour
                 }
             default:
                 {
-                    Debug.LogWarning("GameSessionStats: Unknown pickup type received.");
+                    if (RuntimeOptions.LoggingWarning)
+                    {
+                        Debug.LogWarning("GameSessionStats: Unknown pickup type received.");
+                    }
                     break;
                 }
         }
@@ -133,6 +142,16 @@ public class GameSessionStats : MonoBehaviour
     public void ResetScore()
     {
         Score = 0f;
+    }
+
+    public void SetScore(float value)
+    {
+        if (value < 0f)
+        {
+            value = 0f;
+        }
+
+        Score = value;
     }
 
     public void FinishSession()

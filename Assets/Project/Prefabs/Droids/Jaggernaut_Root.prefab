@@ -218,7 +218,6 @@ GameObject:
   - component: {fileID: 5162487851505286545}
   - component: {fileID: 4435683437533363672}
   - component: {fileID: 5148997892653749222}
-  - component: {fileID: 4435683437533363671}
   m_Layer: 7
   m_Name: Ruby_Jaggernaut_Blade
   m_TagString: Enemy
@@ -291,22 +290,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!54 &4435683437533363671
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4934798390666941232}
-  serializedVersion: 2
-  m_Mass: 10
-  m_Drag: 1
-  m_AngularDrag: 1
-  m_UseGravity: 0
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 0
-  m_CollisionDetection: 2
 --- !u!1 &6667716688527210393
 GameObject:
   m_ObjectHideFlags: 0
@@ -742,6 +725,7 @@ GameObject:
   - component: {fileID: 619605205593615940}
   - component: {fileID: 7782477386366146642}
   - component: {fileID: 2323371938466501353}
+  - component: {fileID: 4084191222127489921}
   m_Layer: 7
   m_Name: Jaggernaut_Root
   m_TagString: Enemy
@@ -782,7 +766,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 1
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 84
   m_CollisionDetection: 0
 --- !u!95 &7782477387924249736
 Animator:
@@ -871,6 +855,7 @@ MonoBehaviour:
   blockPushWhenObstacleDetected: 1
   damageMultiplier: 1
   lineOfSightSensor: {fileID: 7782477387924249733}
+  enemyRigidbody: {fileID: 0}
   movementSensor: {fileID: 7167257823997210803}
   target: {fileID: 0}
   currentWaveIndex: 0
@@ -944,6 +929,7 @@ MonoBehaviour:
   axisXPower: 0.5
   axisYPower: 0.5
   axisZPower: 5
+  bladeImpulsePercent: 75
   jaggernautAnimator: {fileID: 7782477387924249736}
   jaggernautDieParameter: Die
   dieAnimationDuration: 4
@@ -974,15 +960,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f508f08461b1b14185b2654e60f6aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseDropChance: 0.1
-  dropChancePerWave: 0.02
-  maxDropChance: 0.5
+  baseDropChance: 0.2
+  dropChancePerWave: 0.05
+  maxDropChance: 0.8
   pickupPrefabs:
   - {fileID: 2418902139566094890, guid: 21b31d0c0c4d26243a3d33657698cf79, type: 3}
   - {fileID: 4651156193632940941, guid: bbb1860f03a89774d885ba8349254d5c, type: 3}
   - {fileID: 4863570174819463809, guid: 44e11a47888884b43a32ca9a2e1b98d2, type: 3}
   - {fileID: 4262517259731844962, guid: af7b071e84789b54783c8218bc01b562, type: 3}
   - {fileID: 2132547664260878483, guid: ce410d09bdc26804fb1bf45d51c7a820, type: 3}
+  photonPickupPrefabPaths:
+  - PhotonPrefabs/Boosters_PUN/BoostDamage_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostDefence_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostHealth_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostShoot_PUN
+  - PhotonPrefabs/Boosters_PUN/BoostSpeed_PUN
   spawnHeightOffset: 0.25
   dropPoint: {fileID: 0}
   enableDebugLogs: 0
@@ -1091,3 +1083,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemySfxController: {fileID: 8943633869796983263}
   sfxSource: {fileID: 0}
+--- !u!114 &4084191222127489921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7782477387924249737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 2
+  ObservedComponents: []
+  sceneViewId: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0

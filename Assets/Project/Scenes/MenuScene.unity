@@ -850,6 +850,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameVersion: NeonBreach_Stage1
   maxPlayers: 3
+  sendRate: 40
+  serializationRate: 20
   enableLogs: 1
 --- !u!4 &300165399
 Transform:

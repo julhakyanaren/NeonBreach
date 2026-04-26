@@ -39,12 +39,18 @@ public class MainMenuController : MonoBehaviour
     {
         if (ambientSourceObject == null)
         {
-            Debug.LogError("MainMenuController: ambientSourceObject is missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("MainMenuController: ambientSourceObject is missing.", this);
+            }
             return false;
         }
         if (string.IsNullOrWhiteSpace(playMusicEvent))
         {
-            Debug.LogError("MainMenuController: playMusicEvent Wwise event name is empty.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("MainMenuController: playMusicEvent Wwise event name is empty.", this);
+            }
             return false;
         }
         return true;

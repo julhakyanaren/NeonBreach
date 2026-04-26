@@ -68,12 +68,15 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("PhotonView used to detect ownership in multiplayer mode.")]
     [SerializeField] private PhotonView photonView;
 
+    private bool ownsMoveInput;
+
     private float baseMoveSpeed;
+    private float animatorSpeedX;
+    private float animatorSpeedY;
+
     private Vector2 moveInput;
     private Vector3 moveDirection;
     private Camera cachedMainCamera;
-    private float animatorSpeedX;
-    private float animatorSpeedY;
 
     private static readonly int SpeedXHash = Animator.StringToHash("SpeedX");
     private static readonly int SpeedYHash = Animator.StringToHash("SpeedY");
@@ -131,19 +134,30 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnEnable()
     {
-        if (moveAction != null)
+        ownsMoveInput = false;
+
+        if (moveAction == null || moveAction.action == null)
         {
-            moveAction.action.Enable();
+            return;
         }
+
+        if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
+        {
+            return;
+        }
+
+        moveAction.action.Enable();
+        ownsMoveInput = true;
     }
 
     private void OnDisable()
     {
-        if (moveAction != null)
+        if (ownsMoveInput && moveAction != null && moveAction.action != null)
         {
             moveAction.action.Disable();
         }
 
+        ownsMoveInput = false;
         externalVelocity = Vector3.zero;
         animatorSpeedX = 0f;
         animatorSpeedY = 0f;
@@ -157,17 +171,6 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        if (RuntimeOptions.MultiplayerMode)
-        {
-            if (photonView != null)
-            {
-                Debug.Log("[" + gameObject.name + "] IsMine = " + photonView.IsMine, this);
-            }
-            else
-            {
-                Debug.Log("[" + gameObject.name + "] PhotonView NULL", this);
-            }
-        }
 
         if (RuntimeOptions.MultiplayerMode && photonView != null && photonView.IsMine == false)
         {

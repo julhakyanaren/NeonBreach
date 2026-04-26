@@ -860,6 +860,7 @@ MonoBehaviour:
   maxHealth: 200
   maxHealthLimit: 1000
   damageMultiplier: 1
+  photonView: {fileID: 0}
   logChanges: 1
   makeInvincible: 0
 --- !u!114 &2052775608889740317
@@ -892,6 +893,8 @@ MonoBehaviour:
   playerRigidbody: {fileID: 2052775608889740316}
   playerCapsuleCollider: {fileID: 3893866321339804437}
   characterAnimator: {fileID: 3893866321042812376}
+  inputBlocker: {fileID: 0}
+  photonView: {fileID: 0}
 --- !u!114 &3893866321042812383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -923,12 +926,19 @@ MonoBehaviour:
   - muzzleVfxType: 1
     muzzleVfxPrefab: {fileID: 2545578564429960476, guid: 779afe5de1c45da48abbb18704bc5239,
       type: 3}
+  - muzzleVfxType: 2
+    muzzleVfxPrefab: {fileID: 6451788359692505047, guid: b5cdffedbe82058449c414b0b04b10e4,
+      type: 3}
   muzzleVfxType: 1
   muzzleOffset: 0.05
+  isBoostedProjectileTrailActive: 0
   projectilePool: {fileID: 6912198723471686816}
   playerRotation: {fileID: 3893866321042812382}
   weaponAnimator: {fileID: 3893866320704530210}
   playerSfxController: {fileID: 2611656802857559333}
+  inputBlocker: {fileID: 0}
+  photonView: {fileID: 0}
+  multiplayerProjectileResourcePath: PhotonPrefabs/Projectiles_PUN/CyanProjectile_PUN
   isDead: 0
 --- !u!114 &3893866321042812382
 MonoBehaviour:
@@ -954,6 +964,8 @@ MonoBehaviour:
   pointerPositionAction: {fileID: 4913675573344473775, guid: 62ac8c77f5d1d8544b2bb25339663254,
     type: 3}
   firePoint: {fileID: 3893866320039735280}
+  inputBlocker: {fileID: 0}
+  photonView: {fileID: 0}
 --- !u!114 &2052775608439583726
 MonoBehaviour:
   m_ObjectHideFlags: 0

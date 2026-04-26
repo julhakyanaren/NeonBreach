@@ -348,7 +348,10 @@ public class MenuChooseController : MonoBehaviour
         {
             if (menuPhotonLauncher == null)
             {
-                Debug.LogError("ChooseMenuController: MenuPhotonLauncher is missing for multiplayer start.", this);
+                if (RuntimeOptions.LoggingError)
+                {
+                    Debug.LogError("ChooseMenuController: MenuPhotonLauncher is missing for multiplayer start.", this);
+                }
                 yield break;
             }
 
@@ -362,7 +365,10 @@ public class MenuChooseController : MonoBehaviour
         }
         catch
         {
-            Debug.LogError("ChooseMenuController: Game Scene failed!", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("ChooseMenuController: Game Scene failed!", this);
+            }
         }
     }
 
@@ -381,14 +387,20 @@ public class MenuChooseController : MonoBehaviour
 
         if (projectileConfigCyan == null)
         {
-            Debug.LogError("ChooseMenuController: Cyan character projectile config source missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("ChooseMenuController: Cyan character projectile config source missing.", this);
+            }
             enabled = false;
             return;
         }
 
         if (projectileConfigLavender == null)
         {
-            Debug.LogError("ChooseMenuController: Lavender character projectile config source missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("ChooseMenuController: Lavender character projectile config source missing.", this);
+            }
             enabled = false;
             return;
         }
@@ -572,13 +584,19 @@ public class MenuChooseController : MonoBehaviour
     {
         if (currentPlayerConfig == null)
         {
-            Debug.LogError("ChooseMenuController: Current player config is missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("ChooseMenuController: Current player config is missing.", this);
+            }
             return;
         }
 
         if (currentProjectileConfig == null)
         {
-            Debug.LogError("ChooseMenuController: Current projectile config is missing.", this);
+            if (RuntimeOptions.LoggingError)
+            {
+                Debug.LogError("ChooseMenuController: Current projectile config is missing.", this);
+            }
             return;
         }
 
@@ -638,231 +656,352 @@ public class MenuChooseController : MonoBehaviour
 
     private bool ValidateReferences()
     {
+        bool loggingError = RuntimeOptions.LoggingError;
         if (characterChangeAnimator == null)
         {
-            Debug.LogError("ChooseMenuController: CharacterChangeAnimator is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CharacterChangeAnimator is missing.", this);
+            }
             return false;
         }
 
         if (cyanCharacterName == null)
         {
-            Debug.LogError("ChooseMenuController: Cyan character name object is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: Cyan character name object is missing.", this);
+            }            
             return false;
         }
 
         if (lavenderCharacterName == null)
         {
-            Debug.LogError("ChooseMenuController: Lavender character name object is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: Lavender character name object is missing.", this);
+            }
             return false;
         }
 
         if (toRightButton == null)
         {
-            Debug.LogError("ChooseMenuController: ToRight button is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: ToRight button is missing.", this);
+            }
             return false;
         }
 
         if (startGameButton == null)
         {
-            Debug.LogError("ChooseMenuController: StartGame button is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: StartGame button is missing.", this);
+            }
             return false;
         }
 
         if (backToMenu == null)
         {
-            Debug.LogError("ChooseMenuController: BackToMainMenu button is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: BackToMainMenu button is missing.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(startChooseParameter))
         {
-            Debug.LogError("ChooseMenuController: StartChoose trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: StartChoose trigger name is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(cyanToLavenderParameter))
         {
-            Debug.LogError("ChooseMenuController: CyanToLavender trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CyanToLavender trigger name is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(lavenderToCyanParameter))
         {
-            Debug.LogError("ChooseMenuController: LavenderToCyan trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: LavenderToCyan trigger name is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(characterChangeSpeedParameter))
         {
-            Debug.LogError("ChooseMenuController: CharacterChangeSpeed parameter name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CharacterChangeSpeed parameter name is empty.", this);
+            }            
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(representCyanParameter))
         {
-            Debug.LogError("ChooseMenuController: RepresentCyan trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: RepresentCyan trigger name is empty.", this);
+            }            
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(representLavenderParameter))
         {
-            Debug.LogError("ChooseMenuController: RepresentLavender trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: RepresentLavender trigger name is empty.", this);
+            }            
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(chooseCyanParameter))
         {
-            Debug.LogError("ChooseMenuController: ChooseCyan trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: ChooseCyan trigger name is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(chooseLavenderParameter))
         {
-            Debug.LogError("ChooseMenuController: ChooseLavender trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: ChooseLavender trigger name is empty.", this);
+            }            
             return false;
         }
 
         if (string.IsNullOrEmpty(cyanLeaveParameter))
         {
-            Debug.LogError("ChooseMenuController: CyanLeave trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CyanLeave trigger name is empty.", this);
+            }
             return false;
         }
 
         if (string.IsNullOrEmpty(lavenderLeaveParameter))
         {
-            Debug.LogError("ChooseMenuController: LavenderLeave trigger name is empty.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: LavenderLeave trigger name is empty.", this);
+            }
             return false;
         }
 
         if (characterChangeSpeed <= 0f)
         {
-            Debug.LogError("ChooseMenuController: CharacterChangeSpeed must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CharacterChangeSpeed must be greater than zero.", this);
+            }
             return false;
         }
 
         if (cyanToLavenderBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: CyanToLavenderBaseDuration must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CyanToLavenderBaseDuration must be greater than zero.", this);
+            }
             return false;
         }
 
         if (lavenderToCyanBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: LavenderToCyanBaseDuration must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: LavenderToCyanBaseDuration must be greater than zero.", this);
+            }
             return false;
         }
 
         if (representCyanBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: RepresentCyanBaseDuration must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: RepresentCyanBaseDuration must be greater than zero.", this);
+            }
+            
             return false;
         }
 
         if (representLavenderBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: RepresentLavenderBaseDuration must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: RepresentLavenderBaseDuration must be greater than zero.", this);
+            }
             return false;
         }
 
         if (chooseCyanBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: ChooseCyanBaseDuration must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: ChooseCyanBaseDuration must be greater than zero.", this);
+            }
+            
             return false;
         }
 
         if (chooseLavenderBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: ChooseLavenderBaseDuration must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: ChooseLavenderBaseDuration must be greater than zero.", this);
+            }
             return false;
         }
 
         if (cyanLeaveBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: CyanLeave must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: CyanLeave must be greater than zero.", this);
+            }
             return false;
         }
 
         if (lavenderLeaveBaseDuration <= 0f)
         {
-            Debug.LogError("ChooseMenuController: LavenderLeave must be greater than zero.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: LavenderLeave must be greater than zero.", this);
+            }
+            
             return false;
         }
 
         if (playerConfigCyan == null)
         {
-            Debug.LogError("ChooseMenuController: Cyan character config source missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: Cyan character config source missing.", this);
+            }
+            
             return false;
         }
 
         if (playerConfigLavender == null)
         {
-            Debug.LogError("ChooseMenuController: Lavender character config source missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: Lavender character config source missing.", this);
+            }
             return false;
         }
 
         if (outTextHealthStart == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextHealthStart is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextHealthStart is missing.", this);
+            }
             return false;
         }
 
         if (outTextHealthLimit == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextHealthLimit is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextHealthLimit is missing.", this);
+            }
             return false;
         }
 
         if (outTextMoveSpeed == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextMoveSpeed is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextMoveSpeed is missing.", this);
+            }
             return false;
         }
 
         if (outTextRotationSpeed == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextRotationSpeed is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextRotationSpeed is missing.", this);
+            }
             return false;
         }
 
         if (outTextShotPerMinute == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextShotPerMinute is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextShotPerMinute is missing.", this);
+            }
             return false;
         }
 
         if (outTextAmmunition == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextAmmunition is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextAmmunition is missing.", this);
+            }
             return false;
         }
 
         if (outTextReloadDuration == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextReloadDuration is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextReloadDuration is missing.", this);
+            }
             return false;
         }
 
         if (outTextProjectileDamage == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextProjectileDamage is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextProjectileDamage is missing.", this);
+            }            
             return false;
         }
 
         if (outTextProjectileSpeed == null)
         {
-            Debug.LogError("ChooseMenuController: OutTextProjectileSpeed is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: OutTextProjectileSpeed is missing.", this);
+            }
+            
             return false;
         }
 
         if (mainMenuCanvasGroup == null)
         {
-            Debug.LogError("ChooseMenuController: MainMenu canvases group game object is missing.", this);
+            if (loggingError)
+            {
+                Debug.LogError("ChooseMenuController: MainMenu canvases group game object is missing.", this);
+            }
+            
             return false;
         }
         
         if (SceneManager.GetSceneByName(gameSceneName) == null)
         {
-            Debug.LogError($"ChooseMenuController: {gameSceneName} is incorrect scene name.", this);
+            if (loggingError)
+            {
+                Debug.LogError($"ChooseMenuController: {gameSceneName} is incorrect scene name.", this);
+            }
             return false;
         }
 

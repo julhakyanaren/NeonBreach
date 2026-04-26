@@ -82,7 +82,10 @@ public class EnemyMovementSensor : MonoBehaviour
 
         if (movementCheckPoints == null || movementCheckPoints.Count == 0)
         {
-            Debug.LogWarning($"{name}: HotshotMovementSensor has no movement check points assigned.");
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning($"{name}: HotshotMovementSensor has no movement check points assigned.");
+            }
         }
     }
 

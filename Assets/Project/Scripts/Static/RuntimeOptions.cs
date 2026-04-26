@@ -24,9 +24,15 @@ public static class RuntimeOptions
 
     public static CameraViewType ConfirmedCameraView = CameraViewType.ThirdPerson;
 
-    public static bool MultiplayerMode = false;
+    public static bool MultiplayerMode = true;
 
     public static bool InputBlocked = false;
 
-    public static bool UseGamepad = true;
+    public static bool UseGamepad = false;
+
+    public static bool Logging = false;
+
+    public static bool LoggingError = true;
+
+    public static bool LoggingWarning = true;
 }

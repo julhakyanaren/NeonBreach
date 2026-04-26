@@ -28,10 +28,6 @@ public class PlayerProjectilePool : MonoBehaviour, IProjectilePool
     [Tooltip("Name suffix used for the generated projectile container.")]
     [SerializeField] private string containerSuffix = "_ProjectilePoolContainer";
 
-    [Header("Trail State")]
-    [Tooltip("Is boosted projectile trail currently active.")]
-    [SerializeField] private bool isBoostedTrailActive;
-
     private List<GameObject> objectsList = new List<GameObject>();
 
     public int ObjectsCount
@@ -78,8 +74,6 @@ public class PlayerProjectilePool : MonoBehaviour, IProjectilePool
             {
                 projectile.SetConfig(playerConfig.projectileConfig);
             }
-
-            projectile.SetBoostedTrailState(isBoostedTrailActive);
         }
 
         objectsList.Add(newObject);
@@ -106,13 +100,6 @@ public class PlayerProjectilePool : MonoBehaviour, IProjectilePool
                 if (projectile.transform.parent != poolContainer)
                 {
                     projectile.transform.SetParent(poolContainer);
-                }
-
-                PlayerProjectile playerProjectile = projectile.GetComponent<PlayerProjectile>();
-
-                if (playerProjectile != null)
-                {
-                    playerProjectile.SetBoostedTrailState(isBoostedTrailActive);
                 }
 
                 return true;
@@ -167,11 +154,6 @@ public class PlayerProjectilePool : MonoBehaviour, IProjectilePool
 
             projectile.Damage = baseProjectileDamage;
         }
-    }
-
-    public void SetBoostedTrailState(bool state)
-    {
-        isBoostedTrailActive = state;
     }
 
     private void CacheBaseProjectileDamage()

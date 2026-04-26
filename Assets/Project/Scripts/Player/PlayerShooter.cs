@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -64,9 +65,16 @@ public class PlayerShooter : MonoBehaviour
     [Tooltip("Current muzzle VFX type used by the player.")]
     [SerializeField] private MuzzleVFXType muzzleVfxType = MuzzleVFXType.CyanEnergy;
 
+    [Tooltip("Boosted muzzle VFX type used by the player.")]
+    [SerializeField] private MuzzleVFXType muzzleBoostedVfxType = MuzzleVFXType.BoostedEnergy;
+
     [Tooltip("Offset applied forward from fire point when spawning muzzle VFX.")]
     [Range(0f, 0.5f)]
     [SerializeField] private float muzzleOffset = 0.05f;
+
+    [Header("Projectile Runtime State")]
+    [Tooltip("Is boosted projectile trail currently active for spawned projectiles.")]
+    [SerializeField] private bool isBoostedProjectileTrailActive;
 
     [Header("References")]
     [Tooltip("Reference to the projectile pool.")]
@@ -84,9 +92,18 @@ public class PlayerShooter : MonoBehaviour
     [Tooltip("Local input blocker for this player.")]
     [SerializeField] private PlayerInputBlocker inputBlocker;
 
+    [Header("Networking")]
+    [Tooltip("PhotonView used to detect ownership in multiplayer mode.")]
+    [SerializeField] private PhotonView photonView;
+
+    [Tooltip("Resources path used for multiplayer projectile spawn through Photon.")]
+    [SerializeField] private string multiplayerProjectileResourcePath = "PhotonPrefabs/Projectiles_PUN/CyanProjectile_PUN";
+
     [Header("Debug / External State")]
     [Tooltip("Set true when player is dead.")]
     [SerializeField] private bool isDead = false;
+
+    private bool ownsShooterInput;
 
     private float nextFireTime;
     private int currentAmmo;
@@ -145,10 +162,16 @@ public class PlayerShooter : MonoBehaviour
     {
         playerRotation = GetComponent<PlayerRotation>();
         inputBlocker = GetComponent<PlayerInputBlocker>();
+        photonView = GetComponent<PhotonView>();
     }
 
     private void Awake()
     {
+        if (photonView == null)
+        {
+            photonView = GetComponent<PhotonView>();
+        }
+
         if (playerRotation == null)
         {
             playerRotation = GetComponent<PlayerRotation>();
@@ -158,6 +181,8 @@ public class PlayerShooter : MonoBehaviour
         {
             inputBlocker = GetComponent<PlayerInputBlocker>();
         }
+
+
 
         ApplyConfig();
         baseShotsPerMinute = shotsPerMinute;
@@ -173,6 +198,18 @@ public class PlayerShooter : MonoBehaviour
 
     private void OnEnable()
     {
+        ownsShooterInput = false;
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView != null && photonView.IsMine == false)
+            {
+                StaticEvents.PauseOpened += OnPauseOpened;
+                StaticEvents.PauseClosed += OnPauseClosed;
+                return;
+            }
+        }
+
         if (fireAction != null && fireAction.action != null)
         {
             fireAction.action.Enable();
@@ -184,22 +221,29 @@ public class PlayerShooter : MonoBehaviour
             reloadAction.action.performed += OnReloadPerformed;
         }
 
+        ownsShooterInput = true;
+
         StaticEvents.PauseOpened += OnPauseOpened;
         StaticEvents.PauseClosed += OnPauseClosed;
     }
 
     private void OnDisable()
     {
-        if (fireAction != null && fireAction.action != null)
+        if (ownsShooterInput)
         {
-            fireAction.action.Disable();
+            if (fireAction != null && fireAction.action != null)
+            {
+                fireAction.action.Disable();
+            }
+
+            if (reloadAction != null && reloadAction.action != null)
+            {
+                reloadAction.action.performed -= OnReloadPerformed;
+                reloadAction.action.Disable();
+            }
         }
 
-        if (reloadAction != null && reloadAction.action != null)
-        {
-            reloadAction.action.performed -= OnReloadPerformed;
-            reloadAction.action.Disable();
-        }
+        ownsShooterInput = false;
 
         StopReloadRoutineInternal();
         reloading = false;
@@ -219,6 +263,31 @@ public class PlayerShooter : MonoBehaviour
         StaticEvents.PauseClosed -= OnPauseClosed;
     }
 
+    public void RespawnResetShooter()
+    {
+        if (ShouldIgnoreNetworkInput())
+        {
+            return;
+        }
+
+        StopReloadRoutineInternal();
+        reloading = false;
+
+        if (playerSfxController != null)
+        {
+            playerSfxController.PostReloadStop();
+        }
+
+        isDead = false;
+
+        nextFireTime = 0f;
+
+        CurrentAmmo = MagazineSize;
+        NotifyAmmoChanged();
+
+        UpdateAnimationCoefficients();
+    }
+
     private void OnPauseOpened()
     {
         PauseReloadAudio();
@@ -232,6 +301,11 @@ public class PlayerShooter : MonoBehaviour
     private void Update()
     {
         UpdateAnimationCoefficients();
+
+        if (ShouldIgnoreNetworkInput())
+        {
+            return;
+        }
 
         if (IsInputBlocked())
         {
@@ -253,7 +327,7 @@ public class PlayerShooter : MonoBehaviour
             return;
         }
 
-        if (projectilePool == null)
+        if (RuntimeOptions.MultiplayerMode == false && projectilePool == null)
         {
             return;
         }
@@ -286,6 +360,31 @@ public class PlayerShooter : MonoBehaviour
         Shoot();
     }
 
+    public void SetBoostedProjectileTrailState(bool state)
+    {
+        isBoostedProjectileTrailActive = state;
+    }
+
+    private bool ShouldIgnoreNetworkInput()
+    {
+        if (RuntimeOptions.MultiplayerMode == false)
+        {
+            return false;
+        }
+
+        if (photonView == null)
+        {
+            return false;
+        }
+
+        if (photonView.IsMine == false)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private bool IsInputBlocked()
     {
         if (RuntimeOptions.InputBlocked)
@@ -301,8 +400,79 @@ public class PlayerShooter : MonoBehaviour
         return false;
     }
 
+    private void SpawnSingleplayerProjectile(Vector3 shootDirection)
+    {
+        if (projectilePool == null)
+        {
+            return;
+        }
+
+        if (!projectilePool.GetProjectile(out GameObject projectileObject))
+        {
+            return;
+        }
+
+        PlayerProjectile projectile = projectileObject.GetComponent<PlayerProjectile>();
+
+        if (projectile == null)
+        {
+            Debug.LogError("PlayerShooter: Projectile component was not found on pooled object.", projectileObject);
+            return;
+        }
+
+        projectileObject.transform.position = firePoint.position;
+        projectileObject.transform.rotation = Quaternion.LookRotation(shootDirection);
+        projectile.SetOwner(gameObject);
+        projectile.SetBoostedTrailState(isBoostedProjectileTrailActive);
+        projectileObject.SetActive(true);
+        projectile.Launch(shootDirection);
+    }
+
+    private void SpawnMultiplayerProjectile(Vector3 shootDirection)
+    {
+        if (string.IsNullOrWhiteSpace(multiplayerProjectileResourcePath))
+        {
+            Debug.LogError("PlayerShooter: Multiplayer projectile resource path is empty.", this);
+            return;
+        }
+
+        GameObject projectileObject = PhotonNetwork.Instantiate(
+            multiplayerProjectileResourcePath,
+            firePoint.position,
+            Quaternion.LookRotation(shootDirection),
+            0,
+            new object[]
+            {
+                shootDirection,
+                isBoostedProjectileTrailActive
+            });
+
+        if (projectileObject == null)
+        {
+            Debug.LogError("PlayerShooter: Photon projectile spawn failed.", this);
+            return;
+        }
+
+        PlayerProjectile projectile = projectileObject.GetComponent<PlayerProjectile>();
+
+        if (projectile == null)
+        {
+            Debug.LogError("PlayerShooter: PlayerProjectile component was not found on multiplayer projectile.", projectileObject);
+            return;
+        }
+
+        projectile.SetOwner(gameObject);
+        projectile.SetBoostedTrailState(isBoostedProjectileTrailActive);
+        projectile.Launch(shootDirection);
+    }
+
     private void Shoot()
     {
+        if (ShouldIgnoreNetworkInput())
+        {
+            return;
+        }
+
         if (reloading)
         {
             return;
@@ -313,7 +483,7 @@ public class PlayerShooter : MonoBehaviour
             return;
         }
 
-        if (!projectilePool.GetProjectile(out GameObject projectileObject))
+        if (firePoint == null)
         {
             return;
         }
@@ -327,31 +497,22 @@ public class PlayerShooter : MonoBehaviour
 
         shootDirection = shootDirection.normalized;
 
-        PlayerProjectile projectile = projectileObject.GetComponent<PlayerProjectile>();
-
-        if (projectile == null)
-        {
-            Debug.LogError("PlayerShooter: Projectile component was not found on pooled object.", projectileObject);
-            return;
-        }
-
         float fireCooldown = GetFireCooldown();
         nextFireTime = Time.time + fireCooldown;
         CurrentAmmo--;
         NotifyAmmoChanged();
 
-        projectileObject.transform.position = firePoint.position;
-        projectileObject.transform.rotation = Quaternion.LookRotation(shootDirection);
-        projectile.SetOwner(gameObject);
-        projectileObject.SetActive(true);
-        projectile.Launch(shootDirection);
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            SpawnMultiplayerProjectile(shootDirection);
+        }
+        else
+        {
+            SpawnSingleplayerProjectile(shootDirection);
+        }
 
         SpawnMuzzleVfx();
-
-        if (weaponAnimator != null)
-        {
-            weaponAnimator.Play(shootStateName, 0, 0f);
-        }
+        PlayWeaponShootAnimationNetworked();
 
         if (playerSfxController != null)
         {
@@ -391,27 +552,42 @@ public class PlayerShooter : MonoBehaviour
         }
     }
 
-    private void SpawnMuzzleVfx()
+    [PunRPC]
+    private void SpawnMuzzleVfx_RPC(Vector3 position, Quaternion rotation, bool isBoosted)
     {
         if (muzzleVfxMap == null || muzzleVfxMap.Count == 0)
         {
             return;
         }
 
+        GameObject prefab;
+
+        if (isBoosted)
+        {
+            if (!muzzleVfxMap.TryGetValue(muzzleBoostedVfxType, out prefab))
+            {
+                return;
+            }
+        }
+        else
+        {
+            if (!muzzleVfxMap.TryGetValue(muzzleVfxType, out prefab))
+            {
+                return;
+            }
+        }
+
+        if (prefab == null)
+        {
+            return;
+        }
+
+        Instantiate(prefab, position, rotation);
+    }
+
+    private void SpawnMuzzleVfx()
+    {
         if (firePoint == null)
-        {
-            return;
-        }
-
-        GameObject muzzlePrefab;
-
-        if (!muzzleVfxMap.TryGetValue(muzzleVfxType, out muzzlePrefab))
-        {
-            Debug.LogWarning("PlayerShooter: No muzzle VFX mapped for " + muzzleVfxType, this);
-            return;
-        }
-
-        if (muzzlePrefab == null)
         {
             return;
         }
@@ -419,7 +595,106 @@ public class PlayerShooter : MonoBehaviour
         Vector3 spawnPosition = firePoint.position + firePoint.forward * muzzleOffset;
         Quaternion spawnRotation = firePoint.rotation;
 
-        Instantiate(muzzlePrefab, spawnPosition, spawnRotation);
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView != null && photonView.IsMine)
+            {
+                photonView.RPC(
+                    "SpawnMuzzleVfx_RPC",
+                    RpcTarget.All,
+                    spawnPosition,
+                    spawnRotation,
+                    isBoostedProjectileTrailActive);
+            }
+        }
+        else
+        {
+            if (muzzleVfxMap == null || muzzleVfxMap.Count == 0)
+            {
+                return;
+            }
+
+            if (!muzzleVfxMap.TryGetValue(muzzleVfxType, out GameObject muzzlePrefab))
+            {
+                return;
+            }
+
+            if (!isBoostedProjectileTrailActive)
+            {
+                Instantiate(muzzlePrefab, spawnPosition, spawnRotation);
+            }
+            else
+            {
+                if (!muzzleVfxMap.TryGetValue(muzzleBoostedVfxType, out GameObject muzzleBoosted))
+                {
+                    return;
+                }
+
+                Instantiate(muzzleBoosted, spawnPosition, spawnRotation);
+            }
+        }
+    }
+
+    [PunRPC]
+    private void PlayWeaponShootAnimation_RPC()
+    {
+        if (weaponAnimator == null)
+        {
+            return;
+        }
+
+        weaponAnimator.Play(shootStateName, 0, 0f);
+    }
+
+    [PunRPC]
+    private void PlayWeaponReloadAnimation_RPC()
+    {
+        if (weaponAnimator == null)
+        {
+            return;
+        }
+
+        weaponAnimator.Play(reloadStateName, 0, 0f);
+    }
+
+    private void PlayWeaponShootAnimationNetworked()
+    {
+        if (weaponAnimator == null)
+        {
+            return;
+        }
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView != null && photonView.IsMine)
+            {
+                photonView.RPC("PlayWeaponShootAnimation_RPC", RpcTarget.All);
+            }
+
+            return;
+        }
+
+        weaponAnimator.Play(shootStateName, 0, 0f);
+    }
+
+    private void PlayWeaponReloadAnimationNetworked()
+    {
+        if (weaponAnimator == null)
+        {
+            return;
+        }
+
+        if (RuntimeOptions.MultiplayerMode)
+        {
+            if (photonView != null && photonView.IsMine)
+            {
+                photonView.RPC("PlayWeaponReloadAnimation_RPC", RpcTarget.All);
+            }
+
+            return;
+        }
+
+        weaponAnimator.Play(reloadStateName, 0, 0f);
     }
 
     public void SetMuzzleVfxType(MuzzleVFXType newMuzzleVfxType)
@@ -429,6 +704,11 @@ public class PlayerShooter : MonoBehaviour
 
     private void OnReloadPerformed(InputAction.CallbackContext context)
     {
+        if (ShouldIgnoreNetworkInput())
+        {
+            return;
+        }
+
         if (IsInputBlocked())
         {
             return;
@@ -468,10 +748,7 @@ public class PlayerShooter : MonoBehaviour
             playerSfxController.PostReloadPlay(reloadDuration);
         }
 
-        if (weaponAnimator != null)
-        {
-            weaponAnimator.Play(reloadStateName, 0, 0f);
-        }
+        PlayWeaponReloadAnimationNetworked();
 
         yield return new WaitForSeconds(reloadDuration);
 

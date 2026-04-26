@@ -23,11 +23,17 @@ public class JaggernautAnimationEvents : MonoBehaviour
 
     public void PlayAttack()
     {
-        Debug.Log("Jaggernaut PlayAttack event fired", this);
+        if (RuntimeOptions.Logging)
+        {
+            Debug.Log("Jaggernaut PlayAttack event fired", this);
+        }
 
         if (enemySfxController == null)
         {
-            Debug.LogWarning("enemySfxController is null", this);
+            if (RuntimeOptions.LoggingWarning)
+            {
+                Debug.LogWarning("enemySfxController is null", this);
+            }
             return;
         }
 
